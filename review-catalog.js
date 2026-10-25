@@ -50,4 +50,22 @@
   }));
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => { view = button.dataset.view; update(); }));
   update();
+  function updateStudyStats() {
+    if (!window.ReadingStudyStore || !window.ReadingStudyCore) return;
+    const stored = ReadingStudyStore.list();
+    const summary = ReadingStudyCore.summary(data.map(p=>({id:p.id,marks:p.questionCount,version:p.testVersion})),stored.attempts);
+    const progress = document.getElementById('catalog-study-progress');
+    if(progress)progress.textContent = '自测满分 '+summary.passed+' / '+data.length;
+    for(const state of summary.states) {
+      const card=cards.get(state.article.id);
+      let badge=card.querySelector('.self-test-badge');
+      if(!state.latest){if(badge)badge.remove();continue;}
+      if(!badge){badge=document.createElement('span');badge.className='badge self-test-badge';card.querySelector('.card-badges').append(badge);}
+      badge.textContent='上次自测 '+state.latest.earned+'/'+state.latest.total+(state.latest.assisted?' · 辅助':'');
+      badge.dataset.passed=String(state.passed);
+    }
+  }
+  addEventListener('storage',updateStudyStats);addEventListener('reading-study-updated',updateStudyStats);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateStudyStats();});
+  updateStudyStats();
 })();
