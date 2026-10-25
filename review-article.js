@@ -38,6 +38,7 @@
     if (!block) return;
     const target = document.getElementById(block);
     if (!target) return;
+    document.querySelectorAll('.framework-focused').forEach(el => el.classList.remove('framework-focused'));
     document.querySelectorAll('.passage-unit.located').forEach(el => el.classList.remove('located'));
     document.querySelectorAll('.evidence-text[data-located]').forEach(el => {
       el.textContent = originalText.get(el);
@@ -95,6 +96,17 @@
     document.body.dataset.mobilePane = pane;
     document.querySelectorAll('[data-pane]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.pane === pane)));
   }
+  document.querySelectorAll('[data-framework-target]').forEach(link => link.addEventListener('click', event => {
+    const target = document.getElementById(link.dataset.frameworkTarget);
+    if (!target) return;
+    event.preventDefault();
+    setPane('passage');
+    document.querySelectorAll('.framework-focused').forEach(el => el.classList.remove('framework-focused'));
+    target.classList.add('framework-focused');
+    target.setAttribute('tabindex', '-1');
+    target.focus({preventScroll:true});
+    target.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth',block:'start'});
+  }));
   document.querySelectorAll('.locate-button[data-locate]').forEach(button => button.addEventListener('click', () => locate(button.dataset.locate, button.closest('.question-card').id)));
   navs.forEach(button => button.addEventListener('click', () => {
     onlyWrong = false; refresh();
