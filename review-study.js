@@ -13,15 +13,20 @@
     return Math.floor(rounded/60)+' 小时'+(rounded%60?' '+rounded%60+' 分钟':'');
   }
   function message(text) {$('study-message').hidden=!text;$('study-message').textContent=text;}
+  function errorLabel(state) {
+    if(state.current)return state.passed?'最近满分':'最近错／未答 '+state.wrongCount+' 题';
+    return '备份错题 '+state.wrongCount+' 题'+(state.article.backupUnanswered?' · 未答 '+state.article.backupUnanswered+' 题':'');
+  }
   function renderLibrary(plan) {
     const query=$('study-search').value.trim().toLocaleLowerCase(),filter=$('study-state').value;
     const states=plan.states.filter(s=>(!query||(s.article.title+' '+s.article.titleZh).toLocaleLowerCase().includes(query)) &&
       (filter==='all'||filter==='passed'&&s.passed||filter==='untested'&&!s.latest||filter==='retry'&&s.latest&&!s.passed));
-    states.sort((a,b)=>({retry:0,outdated:1,untested:2,passed:3}[a.status]-{retry:0,outdated:1,untested:2,passed:3}[b.status])||a.article.title.localeCompare(b.article.title));
+    states.sort((a,b)=>Number(a.passed)-Number(b.passed)||ReadingStudyCore.comparePriority(a,b));
     const body=$('article-results');body.replaceChildren();
     for(const state of states) {
       const a=state.article,tr=node('tr'),titleCell=node('td');
       titleCell.append(node('strong',a.title,'results-title'),node('span',a.titleZh+' · '+({high:'高频',medium:'中频',low:'低频'})[a.frequency],'results-subtitle'));
+      titleCell.append(node('span',errorLabel(state),'results-subtitle'));
       if(state.history.length) {
         const details=node('details',undefined,'attempt-details');details.append(node('summary',state.history.length+' 次测试记录'));
         const list=node('ol');
@@ -38,7 +43,7 @@
       scoreCell.append(node('span',state.latest?state.latest.earned+' / '+state.latest.total:'未测','results-score'));
       const status=node('span',({passed:'满分通过',retry:'需要复测',outdated:'题库已更新，待复测',untested:'尚无新测试结果'})[state.status]+(state.latest?.assisted?' · 使用翻译':''),'results-status');status.dataset.status=state.status;scoreCell.append(status);
       const next=node('td',undefined,'results-next');
-      if(!state.latest)next.textContent='按高频与历史错题优先安排';
+      if(!state.latest)next.textContent='错题多的文章优先；相同再按历史错题与频次';
       else if(ReadingStudyCore.dateKey(state.dueAt)>=plan.examDate)next.textContent=state.passed?'考前轻量回顾':'考前优先复习错题';
       else next.textContent=(state.passed?'次日复测 · ':'再次测试 · ')+momentFormat.format(new Date(state.dueAt));
       const action=node('td'),actions=node('div',undefined,'results-actions');
@@ -52,7 +57,7 @@
     $('day-tasks').replaceChildren();
     if(!day) {
       $('selected-day-heading').textContent='考试日：轻量回顾';$('selected-day-meta').textContent='上午 9 点考试';
-      const pending=plan.states.filter(s=>s.latest&&!s.passed).slice(0,5);
+      const pending=plan.states.filter(s=>!s.passed&&s.wrongCount>0).sort(ReadingStudyCore.comparePriority).slice(0,5);
       for(const s of pending){const li=node('li');li.append(node('div',s.article.title,'day-task-copy'),link('看错题','逐篇复习/'+s.article.file));$('day-tasks').append(li);}
       $('day-reserve').textContent=plan.examOver?'考试时间已到，成绩与记录继续保留。':'考前可用 10–15 分钟回顾仍未通过的题目，出发前留出充分准备时间。';return;
     }
@@ -61,7 +66,7 @@
     for(const [i,task] of day.tasks.entries()) {
       const state=plan.states.find(s=>s.article.id===task.id),a=state.article,li=node('li'),copy=node('div',undefined,'day-task-copy');
       const waiting=task.kind!=='first'&&ReadingStudyCore.dateKey(task.notBefore)===plan.today&&Date.parse(task.notBefore)>Date.now();
-      copy.append(node('strong',a.title),node('small',({first:'首测',retry:'错题复习＋复测',confirm:'满分后的次日复测'})[task.kind]+' · 约 '+task.minutes+' 分钟'+(waiting?' · '+momentFormat.format(new Date(task.notBefore))+' 后再测':'')));
+      copy.append(node('strong',a.title),node('small',errorLabel(state)+' · '+({first:'首测',retry:'错题复习＋复测',confirm:'满分后的次日复测'})[task.kind]+' · 约 '+task.minutes+' 分钟'+(waiting?' · '+momentFormat.format(new Date(task.notBefore))+' 后再测':'')));
       li.append(node('span',String(i+1).padStart(2,'0'),'task-sequence'),copy,link(waiting?'先复习':'测试',(waiting?'逐篇复习/':'逐篇测试/')+a.file));$('day-tasks').append(li);
     }
     $('day-reserve').textContent=day.past?'已完成测试 '+day.completedAttempts+' 次，记录用时 '+formatMinutes(day.spentMinutes)+'。':
@@ -87,7 +92,7 @@
     else {
       capacity.append(node('strong','距全篇满分还差 '+(articles.length-plan.passed)+' 篇。'));
       capacity.append(node('p','按当前测试速度估算，还需约 '+formatMinutes(plan.requiredMinutes)+'；剩余计划可用于测试约 '+formatMinutes(plan.availableMinutes)+'（每天另留 10 分钟核对错题）。'));
-      capacity.append(node('p',plan.gapMinutes>0?'现有时间少于全覆盖所需时间，约差 '+formatMinutes(plan.gapMinutes)+'。'+plan.unplanned.length+' 篇尚未排入每日预算；先执行高频与错题任务，再根据真实速度调整。':'当前估计可覆盖待通过任务，进度仍以实际交卷为准。'));
+      capacity.append(node('p',plan.gapMinutes>0?'现有时间少于全覆盖所需时间，约差 '+formatMinutes(plan.gapMinutes)+'。'+plan.unplanned.length+' 篇尚未排入每日预算；先复习错题多的文章，再根据真实速度调整。':'当前估计可覆盖待通过任务，进度仍以实际交卷为准。'));
     }
     const body=$('plan-days');body.replaceChildren();
     for(const day of plan.days) {

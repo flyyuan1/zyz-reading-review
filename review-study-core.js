@@ -41,15 +41,22 @@
       const history = byArticle.get(article.id)||[], latest=history[history.length-1];
       const current = !!latest && latest.version===article.version && latest.total===article.marks;
       const passed = current && latest.earned===latest.total;
+      const backupWrong=Math.max(0,Number(article.backupWrong ?? article.historicalWrong)||0);
+      const wrongCount=current ? latest.total-latest.earned : backupWrong;
       let dueAt = null;
       if (latest) dueAt = passed ? addDays(dateKey(latest.submittedAt),1)+'T07:00:00+08:00' : new Date(Date.parse(latest.submittedAt)+20*60000).toISOString();
-      return {article,history,latest,current,passed,dueAt,status:!latest?'untested':!current?'outdated':passed?'passed':'retry'};
+      return {article,history,latest,current,passed,dueAt,wrongCount,wrongSource:current?'latest':'backup',status:!latest?'untested':!current?'outdated':passed?'passed':'retry'};
     });
     const measured=states.filter(s=>s.latest&&s.current);
     const recentEarned=measured.reduce((n,s)=>n+s.latest.earned,0),recentTotal=measured.reduce((n,s)=>n+s.latest.total,0);
     return {states,attempts:all,passed:states.filter(s=>s.passed).length,untested:states.filter(s=>!s.latest).length,
       needsRetry:states.filter(s=>s.latest&&!s.passed).length,latestAccuracy:recentTotal ? recentEarned/recentTotal : null,
       cumulativeEarned:all.reduce((n,a)=>n+a.earned,0),cumulativeTotal:all.reduce((n,a)=>n+a.total,0)};
+  }
+  function comparePriority(a,b) {
+    const frequency={high:2,medium:1,low:0};
+    return b.wrongCount-a.wrongCount || (b.article.historicalWrong||0)-(a.article.historicalWrong||0) ||
+      (frequency[b.article.frequency]||0)-(frequency[a.article.frequency]||0) || a.article.title.localeCompare(b.article.title);
   }
   function buildPlan(articles, attempts, options = {}, now = new Date()) {
     const config=settings(options), result=summary(articles,attempts),today=dateKey(now),examDate=dateKey(config.examAt);
@@ -60,30 +67,29 @@
       const base=Math.max(1.5,Math.min(15,median(own)||globalMinutes));
       return Math.ceil(retest ? Math.max(2,base*.65)+(state.passed?0:2) : base);
     }
-    const priority = s => ({high:60,medium:30,low:0}[s.article.frequency]||0)+Math.min(30,(s.article.historicalWrong||0)*3)+(s.latest&&!s.passed?80+(1-s.latest.earned/s.latest.total)*40:0);
     const scheduled=new Set(),days=[];
     for (let day = config.startDate; day<examDate&&days.length<30; day=addDays(day,1)) {
       const done=result.attempts.filter(a=>dateKey(a.submittedAt)===day),spent=done.reduce((n,a)=>n+a.durationSeconds/60,0);
       if(day<today){days.push({date:day,budget:config.dailyMinutes,spentMinutes:spent,completedAttempts:done.length,reserveMinutes:0,tasks:[],plannedMinutes:0,remainingMinutes:0,past:true});continue;}
       const reserve=Math.min(config.reserveMinutes,config.dailyMinutes);
-      let remaining=Math.max(0,config.dailyMinutes-spent-reserve),reviewUsed=0;
+      let remaining=Math.max(0,config.dailyMinutes-spent-reserve);
       const tasks=[];
-      const add=(state,kind)=>{
+      const add=(state,kind,heldMinutes=0)=>{
         const minutes=estimate(state,kind!=='first');
-        if(minutes>remaining+.0001||scheduled.has(state.article.id))return false;
+        if(minutes>remaining-heldMinutes+.0001||scheduled.has(state.article.id))return false;
         tasks.push({id:state.article.id,kind,minutes,notBefore:kind==='first'?null:state.dueAt});
         remaining-=minutes;scheduled.add(state.article.id);return true;
       };
-      const due=result.states.filter(s=>s.latest&&!scheduled.has(s.article.id)&&dateKey(s.dueAt)<=day)
-        .sort((a,b)=>priority(b)-priority(a)||a.dueAt.localeCompare(b.dueAt)||a.article.title.localeCompare(b.article.title));
-      // Reserve part of each block for real, already-known retests. Future outcomes are never assumed.
-      for(const s of due) {
-        const minutes=estimate(s,true);
-        if(reviewUsed+minutes<=30&&add(s,s.passed?'confirm':'retry'))reviewUsed+=minutes;
-      }
-      const fresh=result.states.filter(s=>!s.latest&&!scheduled.has(s.article.id)).sort((a,b)=>priority(b)-priority(a)||a.article.title.localeCompare(b.article.title));
-      for(const s of fresh)add(s,'first');
-      for(const s of due)add(s,s.passed?'confirm':'retry');
+      const eligibleStates=result.states.filter(s=>!scheduled.has(s.article.id)&&(!s.latest||dateKey(s.dueAt)<=day));
+      const pending=eligibleStates.filter(s=>!s.passed).sort(comparePriority);
+      const confirmations=eligibleStates.filter(s=>s.passed).sort(comparePriority);
+      // Put articles with more outstanding errors first, while keeping a small confirmation block.
+      const confirmationReserve=confirmations.length ? Math.min(10,remaining) : 0;
+      for(const s of pending)add(s,s.latest?'retry':'first',confirmationReserve);
+      let confirmationUsed=0;
+      for(const s of confirmations){const minutes=estimate(s,true);if(confirmationUsed+minutes<=confirmationReserve&&add(s,'confirm'))confirmationUsed+=minutes;}
+      for(const s of pending)add(s,s.latest?'retry':'first');
+      if(!pending.some(s=>!scheduled.has(s.article.id)))for(const s of confirmations)add(s,'confirm');
       days.push({date:day,budget:config.dailyMinutes,spentMinutes:spent,completedAttempts:done.length,reserveMinutes:reserve,
         tasks,plannedMinutes:tasks.reduce((n,t)=>n+t.minutes,0),remainingMinutes:Math.max(0,remaining)});
     }
@@ -94,5 +100,5 @@
       requiredMinutes,availableMinutes,gapMinutes:Math.max(0,requiredMinutes-availableMinutes),
       unplanned:targetRemaining.filter(s=>!scheduled.has(s.article.id)),estimatedFirstMinutes:Math.max(1.5,globalMinutes)};
   }
-  return {defaults,dateKey,addDays,settings,validAttempt,uniqueAttempts,summary,buildPlan};
+  return {defaults,dateKey,addDays,settings,validAttempt,uniqueAttempts,summary,comparePriority,buildPlan};
 });
