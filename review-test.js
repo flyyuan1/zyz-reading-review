@@ -131,7 +131,7 @@
     addText(score, 'small', '', ' / ' + result.total + ' 分');
     const wrong = Object.values(result.results).filter(r => r.status !== 'correct').length;
     addText(summary, 'p', '', wrong ? wrong + ' 个题组需要复习；下方保留了你的答案。' : '全部正确。可以稍后再次闭卷回忆。');
-    addText(summary, 'p', '', usedTranslation ? '本次使用了翻译辅助。' : '本次交卷前未打开翻译。');
+    addText(summary, 'p', '', usedTranslation ? '本次使用了翻译辅助，满分同样计入记忆进度。' : '本次交卷前未打开翻译，满分计入记忆进度。');
     const retry = addText(summary, 'button', '', save ? '重新测试' : '返回当前测试'); retry.type = 'button'; retry.addEventListener('click', reset);
     const clear = addText(summary, 'button', 'clear-test-record', '清空当前作答');
     clear.type = 'button';

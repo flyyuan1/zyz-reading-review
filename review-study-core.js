@@ -40,10 +40,10 @@
     const states = articles.map(article=>{
       const history = byArticle.get(article.id)||[], latest=history[history.length-1];
       const current = !!latest && latest.version===article.version && latest.total===article.marks;
-      const passed = current && !latest.assisted && latest.earned===latest.total;
+      const passed = current && latest.earned===latest.total;
       let dueAt = null;
       if (latest) dueAt = passed ? addDays(dateKey(latest.submittedAt),1)+'T07:00:00+08:00' : new Date(Date.parse(latest.submittedAt)+20*60000).toISOString();
-      return {article,history,latest,current,passed,dueAt,status:!latest?'untested':!current?'outdated':passed?'passed':latest.assisted&&latest.earned===latest.total?'assisted':'retry'};
+      return {article,history,latest,current,passed,dueAt,status:!latest?'untested':!current?'outdated':passed?'passed':'retry'};
     });
     const measured=states.filter(s=>s.latest&&s.current);
     const recentEarned=measured.reduce((n,s)=>n+s.latest.earned,0),recentTotal=measured.reduce((n,s)=>n+s.latest.total,0);

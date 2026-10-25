@@ -17,7 +17,7 @@
     const query=$('study-search').value.trim().toLocaleLowerCase(),filter=$('study-state').value;
     const states=plan.states.filter(s=>(!query||(s.article.title+' '+s.article.titleZh).toLocaleLowerCase().includes(query)) &&
       (filter==='all'||filter==='passed'&&s.passed||filter==='untested'&&!s.latest||filter==='retry'&&s.latest&&!s.passed));
-    states.sort((a,b)=>({retry:0,assisted:1,outdated:2,untested:3,passed:4}[a.status]-{retry:0,assisted:1,outdated:2,untested:3,passed:4}[b.status])||a.article.title.localeCompare(b.article.title));
+    states.sort((a,b)=>({retry:0,outdated:1,untested:2,passed:3}[a.status]-{retry:0,outdated:1,untested:2,passed:3}[b.status])||a.article.title.localeCompare(b.article.title));
     const body=$('article-results');body.replaceChildren();
     for(const state of states) {
       const a=state.article,tr=node('tr'),titleCell=node('td');
@@ -36,7 +36,7 @@
       }
       const scoreCell=node('td');
       scoreCell.append(node('span',state.latest?state.latest.earned+' / '+state.latest.total:'未测','results-score'));
-      const status=node('span',({passed:'无翻译满分',retry:'需要复测',assisted:'辅助满分，待独立确认',outdated:'题库已更新，待复测',untested:'尚无新测试结果'})[state.status],'results-status');status.dataset.status=state.status;scoreCell.append(status);
+      const status=node('span',({passed:'满分通过',retry:'需要复测',outdated:'题库已更新，待复测',untested:'尚无新测试结果'})[state.status]+(state.latest?.assisted?' · 使用翻译':''),'results-status');status.dataset.status=state.status;scoreCell.append(status);
       const next=node('td',undefined,'results-next');
       if(!state.latest)next.textContent='按高频与历史错题优先安排';
       else if(ReadingStudyCore.dateKey(state.dueAt)>=plan.examDate)next.textContent=state.passed?'考前轻量回顾':'考前优先复习错题';
@@ -74,7 +74,7 @@
     const valid=plan.states.filter(s=>s.current),assisted=valid.filter(s=>s.latest.assisted).length;
     $('metric-passed').textContent=plan.passed+' / '+articles.length;
     $('metric-accuracy').textContent=plan.latestAccuracy===null?'—':(plan.latestAccuracy*100).toFixed(1)+'%';
-    $('metric-tested').textContent='有有效成绩 '+valid.length+' 篇'+(assisted?'，含辅助 '+assisted+' 篇':'');
+    $('metric-tested').textContent='有有效成绩 '+valid.length+' 篇'+(assisted?'，含使用翻译 '+assisted+' 篇':'');
     $('metric-attempts').textContent=plan.attempts.length+' 次';$('metric-retry').textContent='待复测 '+plan.needsRetry+' 篇 · 未测 '+plan.untested+' 篇';
     const todayMinutes=plan.attempts.filter(a=>ReadingStudyCore.dateKey(a.submittedAt)===plan.today).reduce((n,a)=>n+a.durationSeconds/60,0);
     $('metric-time').textContent=formatMinutes(todayMinutes);
@@ -83,7 +83,7 @@
     $('exam-countdown').textContent=delta<=0?'考试时间已到':Math.floor(delta/86400000)+' 天 '+Math.floor(delta/3600000)%24+' 小时';
     const capacity=$('capacity-note');capacity.replaceChildren();
     if(plan.today>=plan.examDate)capacity.append(node('strong','今天进入考前回顾阶段。'),node('p','计划表保留已记录成绩，考前优先看仍未通过的文章与依据句。'));
-    else if(plan.passed===articles.length)capacity.append(node('strong','175 篇最近一轮均已无翻译满分。'),node('p','继续按到期任务复测，确认隔天仍能回忆。'));
+    else if(plan.passed===articles.length)capacity.append(node('strong','175 篇最近一轮均已满分通过。'),node('p','继续按到期任务复测，确认隔天仍能回忆。'));
     else {
       capacity.append(node('strong','距全篇满分还差 '+(articles.length-plan.passed)+' 篇。'));
       capacity.append(node('p','按当前测试速度估算，还需约 '+formatMinutes(plan.requiredMinutes)+'；剩余计划可用于测试约 '+formatMinutes(plan.availableMinutes)+'（每天另留 10 分钟核对错题）。'));

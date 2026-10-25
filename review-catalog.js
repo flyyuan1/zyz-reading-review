@@ -61,7 +61,7 @@
       let badge=card.querySelector('.self-test-badge');
       if(!state.latest){if(badge)badge.remove();continue;}
       if(!badge){badge=document.createElement('span');badge.className='badge self-test-badge';card.querySelector('.card-badges').append(badge);}
-      badge.textContent='上次自测 '+state.latest.earned+'/'+state.latest.total+(state.latest.assisted?' · 辅助':'');
+      badge.textContent='上次自测 '+state.latest.earned+'/'+state.latest.total+(state.latest.assisted?' · 使用翻译':'');
       badge.dataset.passed=String(state.passed);
     }
   }
