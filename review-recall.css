@@ -1,0 +1,37 @@
+/* Scope every answer mask to the optional recall mode. */
+.recall-launch-row{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin:-5px 0 21px}.recall-launch{border:1px solid #b9cbb8;border-radius:7px;background:#f0f7ed;color:#4d6c48;padding:7px 11px;font-size:12px;white-space:nowrap}.recall-launch-hint{font-size:11px;color:#8e8790;line-height:1.6}.recall-toolbar{position:sticky;top:-1px;z-index:8;margin:0 0 20px;padding:12px 13px;border:1px solid #d2dfca;border-radius:9px;background:#f7faf2;box-shadow:0 3px 10px #2634220a;color:#52664d}.recall-toolbar[hidden],.recall-unit-control{display:none}.recall-toolbar-top{display:flex;align-items:center;gap:9px;line-height:1.5}.recall-toolbar-top strong{font-size:13px}.recall-count{font-size:10px;color:#899480;flex:1}.recall-exit{font-size:11px;color:#78806f;border:0;background:transparent;padding:3px;white-space:nowrap}.recall-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:9px}.recall-actions button,.recall-test-link{font-size:11px;line-height:1.5;padding:5px 8px;border:1px solid #c8d6bf;border-radius:5px;background:#fff;color:#63775b;text-decoration:none;white-space:nowrap}.recall-actions .recall-primary{background:#607d54;border-color:#607d54;color:#fff}.recall-actions .recall-remask{margin-left:auto;border-color:transparent;background:transparent;color:#8a9180}.recall-actions button:disabled{opacity:.45;cursor:default}.recall-help{margin:8px 0 0;font-size:10px;line-height:1.7;color:#8a927f}.recall-live{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.recall-launch:focus-visible,.recall-toolbar button:focus-visible,.recall-test-link:focus-visible,.recall-unit-control:focus-visible{outline:3px solid #a2b794;outline-offset:2px}
+body[data-recall-mode=on] .recall-launch-row{display:none}body[data-recall-mode=on] .recall-unit{scroll-margin-top:135px}body[data-recall-mode=on] .recall-unit-control{display:inline-flex;align-items:center;justify-content:center;border:1px solid #ccd9c3;border-radius:5px;background:#f5f9ef;color:#6c805f;font-size:10px;padding:4px 7px;line-height:1.4;white-space:nowrap;cursor:pointer}body[data-recall-mode=on] .recall-unit-control:disabled{color:#9ea796;background:#f9faf6;border-color:#e1e7db;cursor:default}body[data-recall-mode=on] .question-top{flex-wrap:wrap}body[data-recall-mode=on] .question-status,body[data-recall-mode=on] .heading-status{display:none}body[data-recall-mode=on] .question-card{border-left-color:#b5bcae}body[data-recall-mode=on] .recall-current{outline:2px solid #b3c69f;outline-offset:4px}body[data-recall-mode=on] .question-nav button[data-status]{background:#f4f6f0;border-color:#c1c9b9;color:#6a7960}body[data-recall-mode=on] .question-nav .recall-nav-current{outline:2px solid #7c9869;outline-offset:1px}body[data-recall-mode=on] .recall-heading .paragraph-heading-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}body[data-recall-mode=on] .recall-heading-control{margin-left:auto}body[data-recall-mode=on] .task-heading{gap:8px;flex-wrap:wrap}body[data-recall-mode=on] .task-heading>.recall-unit-control{margin-left:auto}
+body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .answer-comparison{position:relative;visibility:hidden;user-select:none;border-radius:5px}body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .answer-comparison::after{content:"先回忆，再揭晓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;visibility:visible;border:1px dashed #d6ddcc;border-radius:5px;background:#fafbf7;color:#a0a791;font-size:12px;letter-spacing:.05em}body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .recall-inline-value,body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .question-bottom>span,body[data-recall-mode=on] .recall-heading[data-recall-revealed=false] .paragraph-correct-heading,body[data-recall-mode=on] .recall-heading[data-recall-revealed=false] .paragraph-own-heading{visibility:hidden;user-select:none}body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .inline-answer{background:#f4f6ee;border-color:#c8d2bd;border-style:dashed;cursor:pointer}body[data-recall-mode=on] .recall-heading[data-recall-revealed=false]{border-color:#d3dccb;background:#fafbf7}
+@media(max-width:700px){.recall-launch-row{gap:6px;margin-bottom:18px}.recall-launch-hint{font-size:10px}.recall-toolbar{padding:10px;margin-bottom:18px}.recall-toolbar-top strong{font-size:12px}.recall-count{font-size:10px}.recall-actions{gap:5px}.recall-actions button,.recall-test-link{padding:5px 7px;font-size:10px}.recall-actions .recall-remask{margin-left:0}.recall-help{font-size:9px}body[data-recall-mode=on] .recall-unit{scroll-margin-top:160px}body[data-recall-mode=on] .recall-unit-control{font-size:10px}}
+@media(prefers-reduced-motion:reduce){body[data-recall-mode=on] .reader-pane{scroll-behavior:auto}}
+body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .answer-note{visibility:hidden;user-select:none}
+
+/* Recall controls share the readable scale of the question cards. */
+.recall-launch-row{gap:10px 14px;margin-bottom:22px}
+.recall-launch{font-size:14px;min-height:42px;padding:9px 12px;color:#42633a;background:#eef5e9;border-color:#a9bea1}
+.recall-launch-hint{font-size:13px;color:#716a77;line-height:1.8}
+.recall-toolbar{padding:15px;background:#f4f8ef;border-color:#c4d3b9}
+.recall-toolbar-top{flex-wrap:wrap;gap:8px 12px}
+.recall-toolbar-top strong{font-size:15px;color:#405c37}
+.recall-count{font-size:13px;color:#5e7350;white-space:nowrap}
+.recall-exit{font-size:13px;min-height:36px;padding:5px;color:#5f7054}
+.recall-actions{gap:8px;margin-top:10px}
+.recall-actions button,.recall-test-link{display:inline-flex;align-items:center;justify-content:center;font-size:13px;min-height:40px;padding:8px 10px;color:#4e6942}
+.recall-actions .recall-primary{background:#526f43;border-color:#526f43;color:#fff}
+.recall-actions .recall-remask{color:#627350}
+.recall-help{font-size:12px;color:#637252;line-height:1.8}
+body[data-recall-mode=on] .recall-unit-control{font-size:12px;min-height:38px;padding:7px 10px;color:#4f6c41}
+body[data-recall-mode=on] .recall-unit{scroll-margin-top:200px}
+body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .answer-comparison::after{font-size:14px;color:#6a785c}
+@media(max-width:700px){
+  .recall-launch{min-height:44px}
+  .recall-launch-hint{font-size:13px}
+  .recall-launch-row .recall-launch-hint{flex-basis:100%;order:1}
+  .recall-toolbar{padding:12px}
+  .recall-toolbar-top strong{font-size:14px}
+  .recall-count{font-size:12px}
+  .recall-actions button,.recall-test-link{font-size:13px;min-height:44px;padding:8px 10px}
+  .recall-help{font-size:12px}
+  body[data-recall-mode=on] .recall-unit-control{font-size:12px;min-height:40px}
+  body[data-recall-mode=on] .recall-unit{scroll-margin-top:260px}
+}

@@ -14,6 +14,7 @@
   }
   function message(text) {$('study-message').hidden=!text;$('study-message').textContent=text;}
   function errorLabel(state) {
+    if(state.wrongSource==='source')return state.wrongCount?'新原站记录错题 '+state.wrongCount+' 题':'原站已正确，待本站回忆确认';
     if(state.current)return state.passed?'最近满分':'最近错／未答 '+state.wrongCount+' 题';
     return '备份错题 '+state.wrongCount+' 题'+(state.article.backupUnanswered?' · 未答 '+state.article.backupUnanswered+' 题':'');
   }
@@ -41,7 +42,8 @@
       }
       const scoreCell=node('td');
       scoreCell.append(node('span',state.latest?state.latest.earned+' / '+state.latest.total:'未测','results-score'));
-      const status=node('span',({passed:'满分通过',retry:'需要复测',outdated:'题库已更新，待复测',untested:'尚无新测试结果'})[state.status]+(state.latest?.assisted?' · 使用翻译':''),'results-status');status.dataset.status=state.status;scoreCell.append(status);
+      const status=node('span',(state.sourceNeedsReview?'原站新错题，待复测':({passed:'满分通过',retry:'需要复测',outdated:'题库已更新，待复测',untested:'尚无新测试结果'})[state.status])+(state.latest?.assisted?' · 使用翻译':''),'results-status');status.dataset.status=state.status;scoreCell.append(status);
+      if(state.consecutiveFullScores)scoreCell.append(node('small','连续 '+state.consecutiveFullScores+' 次满分 · '+state.fullScoreDays+' 天'+(state.stableRecall?' · 隔天已巩固':''),'results-subtitle'));
       const next=node('td',undefined,'results-next');
       if(!state.latest)next.textContent='错题多的文章优先；相同再按历史错题与频次';
       else if(ReadingStudyCore.dateKey(state.dueAt)>=plan.examDate)next.textContent=state.passed?'考前轻量回顾':'考前优先复习错题';
@@ -74,7 +76,7 @@
   }
   function render() {
     const stored=ReadingStudyStore.list();
-    const plan=ReadingStudyCore.buildPlan(articles,stored.attempts,ReadingStudyStore.getSettings(),new Date());currentPlan=plan;
+    const plan=ReadingStudyCore.buildPlan(ReadingStudyStore.enrichArticles(articles),stored.attempts,ReadingStudyStore.getSettings(),new Date());currentPlan=plan;
     if(!stored.ok)message('当前浏览器无法读取测试记录。请检查浏览器存储权限；此页面没有云端副本。');
     const valid=plan.states.filter(s=>s.current),assisted=valid.filter(s=>s.latest.assisted).length;
     $('metric-passed').textContent=plan.passed+' / '+articles.length;
@@ -84,6 +86,7 @@
     const todayMinutes=plan.attempts.filter(a=>ReadingStudyCore.dateKey(a.submittedAt)===plan.today).reduce((n,a)=>n+a.durationSeconds/60,0);
     $('metric-time').textContent=formatMinutes(todayMinutes);
     $('goal-progress').value=plan.passed;$('goal-percent').textContent=(plan.passed/articles.length*100).toFixed(1)+'%';
+    $('goal-caption').textContent='使用翻译也可计入满分进度。已有隔天连续满分 '+plan.stableRecall+' 篇，仅作巩固提示。';
     const delta=Date.parse(plan.config.examAt)-Date.now();
     $('exam-countdown').textContent=delta<=0?'考试时间已到':Math.floor(delta/86400000)+' 天 '+Math.floor(delta/3600000)%24+' 小时';
     const capacity=$('capacity-note');capacity.replaceChildren();
@@ -102,18 +105,19 @@
       const action=node('td'),button=node('button',day.past?'看记录':'看任务');button.type='button';button.addEventListener('click',()=>{selectedDay=day.date;render();$('selected-day-heading').scrollIntoView({block:'nearest'});});action.append(button);
       row.append(d,node('td',first+' 篇'),node('td',again+' 篇'),node('td',day.past?'—':day.plannedMinutes+' + '+day.reserveMinutes+' 分钟'),node('td',day.completedAttempts+' 次 · '+formatMinutes(day.spentMinutes)),action);body.append(row);
     }
-    renderDay(plan);renderLibrary(plan);
+    renderDay(plan);renderLibrary(plan);dispatchEvent(new CustomEvent('reading-study-rendered'));
   }
+  window.ReadingStudyPage={getPlan:()=>currentPlan,render};
   $('study-search').addEventListener('input',()=>renderLibrary(currentPlan));$('study-state').addEventListener('change',()=>renderLibrary(currentPlan));
   $('export-history').addEventListener('click',()=>{
     const blob=new Blob([JSON.stringify(ReadingStudyStore.exportData(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=link('','');
-    a.href=url;a.download='阅读测试记录-'+ReadingStudyCore.dateKey(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    a.href=url;a.download='阅读学习记录-'+ReadingStudyCore.dateKey(new Date())+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
     message('记录已导出。可在另一浏览器或线上／本地版本导入。');
   });
   $('import-history').addEventListener('click',()=>$('history-file').click());
   $('history-file').addEventListener('change',async event=>{
     const file=event.target.files?.[0];if(!file)return;
-    try{if(file.size>10000000)throw new Error('记录文件过大，请选择导出的 JSON 文件。');const result=ReadingStudyStore.merge(JSON.parse(await file.text()),articles);message('已导入 '+result.added+' 条记录，跳过 '+result.skipped+' 条重复或不适用记录。');render();}
+    try{if(file.size>64000000)throw new Error('记录文件过大，请选择导出的 JSON 文件。');const result=ReadingStudyStore.merge(JSON.parse(await file.text()),articles);message('新增 '+result.added+' 条本站测试、'+result.sourceAdded+' 条原站记录；补全 '+result.sourceUpdated+' 条原站记录。'+(result.sourceConflicts?result.sourceConflicts+' 条原站冲突未覆盖。':'')+'重复记录已跳过。');render();}
     catch(error){message(error.message||'导入失败，请检查记录文件。');}finally{event.target.value='';}
   });
   addEventListener('storage',render);addEventListener('reading-study-updated',render);document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});

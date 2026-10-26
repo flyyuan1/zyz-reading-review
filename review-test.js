@@ -71,7 +71,7 @@
     }
   }
   function persist() {
-    if(editing)record.draftElapsedSeconds=elapsedSeconds;
+    if(editing){record.draftElapsedSeconds=elapsedSeconds;record.draftUpdatedAt=new Date().toISOString();}
     try {
       localStorage.setItem(key, JSON.stringify({...record, version:data.version}));
       storageAvailable = true;
@@ -173,6 +173,8 @@
       if (saved.ok) status.textContent = '本次结果已计入计划与成绩';
       else status.textContent = '本篇结果已保留，统计保存失败：'+saved.error;
       const plan = addText(summary,'a','test-plan-link','查看统计与后续计划 →');plan.href='../复习计划.html';
+      const practice=addText(summary,'a','test-plan-link',wrong?'先复习本篇错题 →':'按顺序背诵本篇 →');practice.href=data.reviewHref+(wrong?'?wrong=1':'?recall=1');
+      const next=addText(summary,'a','test-plan-link','继续今日任务 →');next.href='../复习计划.html';
     } else status.textContent = '正在查看历史结果';
     setPane('questions');
     summary.focus({preventScroll:true});summary.scrollIntoView({behavior:smooth(),block:'start'});
@@ -191,7 +193,7 @@
     summary.hidden = true;submit.hidden = false;restart.hidden = true;
     lastButton.hidden = !record.lastSubmission;
     announcement.textContent = '';
-    setTranslations(false);progress();
+    setTranslations(preferredTranslation());progress();
     record.draft = draft;record.draftAssisted = assisted;persist();
     if (storageAvailable) status.textContent = resume ? '已返回未交卷的作答' : '新一轮测试，答案自动保存';
     setPane('questions');
@@ -225,6 +227,7 @@
   document.addEventListener('change', answerChanged);
   translationButton.addEventListener('click', () => {
     setTranslations(document.body.dataset.translations !== 'on');
+    try{localStorage.setItem('zyz-reading-translation-pref-v1',document.body.dataset.translations);}catch(_){}
     if (editing) {record.draft = readSnapshot();record.draftAssisted = assisted;persist();}
   });
   submit.addEventListener('click', () => showResults(readSnapshot(),assisted,true));
@@ -238,7 +241,8 @@
     const control = g.evaluation === 'unordered-membership' ? document.querySelector('[data-set="' + g.id + '"]') : controls.find(c => c.dataset.response === g.responses[0] && c.closest('.questions-pane'));
     if (editing && control) control.focus({preventScroll:true});
   }));
-  applySnapshot(draft);progress();
+  function preferredTranslation(){try{return localStorage.getItem('zyz-reading-translation-pref-v1')==='on';}catch(_){return false;}}
+  applySnapshot(draft);setTranslations(preferredTranslation());progress();
   const requestedId=new URLSearchParams(location.search).get('attempt');
   if(requestedId) {
     const requested=shared.attempts.find(a=>a.id===requestedId&&a.passageId===data.passageId&&a.version===data.version);

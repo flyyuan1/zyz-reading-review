@@ -1,4 +1,4 @@
-:root{color-scheme:light;--page:#f0edeb;--surface:#fffdfc;--ink:#282527;--muted:#7b7476;--line:#e0d9d8;--accent:#6b5b78;--soft:#f4f0f5;--green:#477155;--red:#aa5047}
+:root{color-scheme:light;--page:#f0edeb;--surface:#fffdfc;--ink:#282527;--muted:#69616b;--line:#e0d9d8;--accent:#66516f;--soft:#f4f0f5;--green:#477155;--red:#aa5047;--font-ui:"Segoe UI Variable Text","Segoe UI","Microsoft YaHei UI","Microsoft YaHei",sans-serif}
 .passage-actions{display:flex;gap:9px;align-items:stretch;margin-top:auto}.passage-actions .open-passage{flex:1;margin-top:0}.start-test{display:flex;align-items:center;justify-content:center;min-width:82px;border:1px solid #a8c2b7;background:#f0f7f3;border-radius:10px;color:#466e5b;text-decoration:none;text-align:center;padding:8px 14px;font-size:14px;font-weight:650}.start-test:hover{background:#e5f0e9;border-color:#709c85}.list-view .passage-actions{grid-column:3;grid-row:1/4;margin:0;flex-direction:column}.list-view .passage-actions .open-passage{margin:0}.catalog .list-view .passage-card{grid-template-columns:minmax(0,1.5fr) minmax(160px,1fr) 145px}@media(max-width:600px){.list-view .passage-actions{flex-direction:row;margin-top:auto}.catalog .list-view .passage-actions .open-passage{margin:0}.passage-actions{margin-top:12px}.start-test{min-width:80px}}
 .catalog-plan-link{font-size:13px;text-decoration:none;border:1px solid #b8cdb5;padding:8px 14px;border-radius:9px;background:#f0f7eb;color:#648058;white-space:nowrap}.catalog-header .edition{margin-left:auto}.catalog-study-progress{font-size:12px;color:#809373;margin-left:10px;white-space:nowrap}.self-test-badge{background:#f5eddf;color:#92774e}.self-test-badge[data-passed=true]{background:#eaf4e7;color:#6d8d5e}@media(max-width:600px){.catalog-plan-link{font-size:11px;padding:6px 9px}.catalog-study-progress{display:none}.catalog-header .edition{display:none}}
 *{box-sizing:border-box}body{margin:0;color:var(--ink);font:16px/1.6 "Segoe UI","Microsoft YaHei",sans-serif;background:var(--page)}button,input,select{font:inherit}button,select,a{touch-action:manipulation}button,a,input,select{outline-offset:4px}a{color:var(--accent)}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #77558f}button:disabled{cursor:default}button[hidden],[hidden]{display:none!important}
@@ -10,3 +10,83 @@
 @media(min-width:1900px){.catalog-shell{margin:32px auto}.catalog-main{padding:42px 50px}.catalog-title{font-size:40px}.passage-card{padding:27px;min-height:265px}.passage-card h2{font-size:22px}.filter-search input,.filter-search select{height:58px}.filter-buttons button{height:48px}}
 @media(max-width:900px){.catalog-shell{width:calc(100% - 24px);margin:12px;border-radius:18px}.catalog-header{padding:19px 24px}.catalog-main{padding:26px 24px}.filter-search{grid-template-columns:1fr 1fr}.filter-search input{grid-column:1/-1}.filter-groups{gap:10px}.filter-group+.filter-group{padding-left:10px}.filter-buttons button{font-size:13px}.passage-card h2{font-size:18px}.catalog-title{font-size:30px}}
 @media(max-width:600px){.catalog-shell{width:100%;margin:0;border:0;border-radius:0;min-height:100vh}.catalog-header{padding:17px 19px}.brand{font-size:19px;letter-spacing:4px}.edition{font-size:11px;padding:7px 10px}.catalog-main{padding:25px 16px}.catalog-title{font-size:29px}.catalog-subtitle{font-size:13px}.filter-groups{grid-template-columns:1fr;gap:10px}.filter-group+.filter-group{padding-left:0;border-left:0}.filter-group{display:flex;gap:12px;align-items:center}.filter-group-label{flex:none;margin:0;width:30px}.filter-buttons{flex:1}.filter-buttons button{height:36px}.catalog-toolbar{flex-wrap:wrap;gap:10px}.toolbar-end{margin-left:auto;gap:7px}.toolbar-end select{max-width:140px}.view-switch button{padding:6px 10px}.passage-grid{grid-template-columns:1fr;gap:12px}.passage-card{min-height:224px;padding:20px}.list-view .passage-card{display:flex}.card-types{margin:12px 0 15px}.list-view .open-passage{margin-top:8px}}
+
+/* Reading-first polish: shared type, clear controls, and a calmer catalogue. */
+body{font-family:var(--font-ui);line-height:1.65}
+button,input,select,textarea{font-family:inherit}
+input,select{color:#48434d}
+input::placeholder{color:#736c76;opacity:1}
+button,a,input,select,summary{ -webkit-tap-highlight-color:transparent }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #795f89;outline-offset:3px}
+.catalog-shell{max-width:1440px;border-radius:20px}
+.catalog-header{gap:16px;padding:23px clamp(20px,3vw,42px)}
+.brand{font-weight:650;letter-spacing:4px}
+.brand small{font-size:12px;letter-spacing:1.5px;font-weight:400;color:#69616b}
+.catalog-main{padding:30px clamp(20px,3vw,44px) 44px}
+.catalog-title{font-size:clamp(28px,2.5vw,36px);font-weight:700;letter-spacing:-.025em}
+.catalog-subtitle{font-size:15px;line-height:1.8;margin-bottom:24px}
+.edition{font-size:13px;padding:7px 12px}
+.catalog-study-progress{font-size:13px;color:#586e4f;margin-left:0}
+.catalog-plan-link{display:inline-flex;align-items:center;justify-content:center;min-height:42px;font-size:14px;color:#426139;border-color:#b4c8a9;background:#edf4e7}
+.filter-panel{padding:16px;background:#f6f3f5;border-color:#e0d9e2;border-radius:14px}
+.filter-group-label{font-size:13px;color:#625769}
+.filter-buttons button{height:42px;font-size:14px;color:#615767}
+.filter-buttons button[aria-pressed=true]{color:#523d60;background:#e9e0ef;border-color:#9a80ab;box-shadow:inset 0 0 0 1px #9a80ab}
+.catalog-toolbar{gap:16px;margin:20px 0 16px}
+.clear-filter{min-height:40px;font-size:13px;color:#695474;padding:8px 2px}
+.toolbar-end select{height:42px;font-size:13px}
+.view-switch button{height:40px;font-size:13px}
+.passage-grid{gap:18px}
+.passage-card{min-height:252px;padding:23px;border-radius:14px}
+.passage-card h2{font-size:21px;line-height:1.4;font-weight:650;overflow-wrap:anywhere}
+.card-subtitle{font-size:15px;color:#6c6370;margin:8px 0 15px}
+.card-types{font-size:13px;color:#6f6573;margin:15px 0 20px;line-height:1.7}
+.badge{font-size:12px;padding:5px 9px}
+.frequency-high{color:#80503c}
+.frequency-medium{color:#6b4e71}
+.frequency-low{color:#49634b}
+.difficulty-badge{color:#705a36}
+.done-badge{color:#66507b}
+.self-test-badge{color:#77603c}
+.self-test-badge[data-passed=true]{color:#496d3c}
+.wrong-badge{color:#96533f;background:#f8e9e2}
+.passage-actions{gap:10px}
+.open-passage{min-height:43px;padding:9px 14px;color:#fff;background:#6b5678;border-color:#6b5678;font-size:14px}
+.open-passage:hover{color:#fff;background:#594364;border-color:#594364}
+.start-test{min-height:43px;font-size:14px;color:#355d49;border-color:#9db7a8;background:#f4f9f5}
+.catalog-footer{font-size:13px;color:#716675;line-height:1.8}
+.catalog .list-view .passage-card{padding:20px 23px;gap:8px 22px}
+.empty-state{font-size:15px}
+@media(max-width:900px){
+  .catalog-header{padding-inline:24px}
+  .catalog-main{padding:26px 24px 36px}
+  .catalog-study-progress{display:none}
+  .passage-card h2{font-size:19px}
+}
+@media(max-width:600px){
+  .catalog-shell{border-radius:0}
+  .catalog-header{padding:17px 18px;gap:12px}
+  .brand{font-size:20px}
+  .catalog-plan-link{font-size:13px;min-height:44px;padding:9px 12px}
+  .catalog-main{padding:25px 16px 36px}
+  .catalog-subtitle{font-size:14px;margin-bottom:20px}
+  .filter-panel{padding:12px}
+  .filter-search{gap:8px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .filter-search input,.filter-search select{height:46px;padding:10px;font-size:16px}
+  .filter-buttons button{height:44px;font-size:14px}
+  .filter-group-label{width:30px}
+  .catalog-toolbar{gap:4px 14px;margin:13px 0 15px}
+  .toolbar-end{width:100%;gap:10px;margin-left:0;justify-content:space-between}
+  .toolbar-end select{flex:1;max-width:none;height:44px;font-size:16px}
+  .view-switch{flex:none}
+  .view-switch button{height:42px;padding:7px 14px}
+  .passage-grid{gap:14px}
+  .passage-card{min-height:0;padding:20px}
+  .passage-card h2{font-size:20px}
+  .card-subtitle{font-size:14px}
+  .card-types{font-size:13px;margin:14px 0 18px}
+  .passage-actions{margin-top:auto}
+  .open-passage,.start-test{min-height:46px}
+  .catalog .list-view .passage-card{padding:18px}
+}
+@media(prefers-reduced-motion:reduce){.passage-card{transition:none}}

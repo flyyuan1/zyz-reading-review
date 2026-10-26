@@ -40,16 +40,30 @@
     const states = articles.map(article=>{
       const history = byArticle.get(article.id)||[], latest=history[history.length-1];
       const current = !!latest && latest.version===article.version && latest.total===article.marks;
-      const passed = current && latest.earned===latest.total;
+      const sourceTime=Date.parse(article.sourceSubmittedAt),sourceWrong=Math.max(0,Math.min(article.marks,Number(article.sourceWrong ?? article.backupWrong)||0));
+      const sourceErrorTime=Date.parse(article.sourceErrorAt||article.sourceSubmittedAt);
+      const newerSource=!!latest&&Number.isFinite(sourceTime)&&sourceTime>Date.parse(latest.submittedAt);
+      const sourceNeedsReview=newerSource&&sourceWrong>0&&Number.isFinite(sourceErrorTime)&&sourceErrorTime>Date.parse(latest.submittedAt);
+      const passed = current && latest.earned===latest.total&&!sourceNeedsReview;
+      let consecutiveFullScores=0;
+      const fullScoreDates=new Set();
+      if(passed)for(let i=history.length-1;i>=0;i--){
+        const previous=history[i];
+        if(previous.version!==article.version||previous.total!==article.marks||previous.earned!==previous.total)break;
+        if(Number.isFinite(sourceErrorTime)&&sourceWrong>0&&Date.parse(previous.submittedAt)<=sourceErrorTime)break;
+        consecutiveFullScores++;fullScoreDates.add(dateKey(previous.submittedAt));
+      }
       const backupWrong=Math.max(0,Number(article.backupWrong ?? article.historicalWrong)||0);
-      const wrongCount=current ? latest.total-latest.earned : backupWrong;
+      const useSourcePriority=newerSource&&!passed;
+      const wrongCount=useSourcePriority ? sourceWrong : current ? latest.total-latest.earned : backupWrong;
       let dueAt = null;
       if (latest) dueAt = passed ? addDays(dateKey(latest.submittedAt),1)+'T07:00:00+08:00' : new Date(Date.parse(latest.submittedAt)+20*60000).toISOString();
-      return {article,history,latest,current,passed,dueAt,wrongCount,wrongSource:current?'latest':'backup',status:!latest?'untested':!current?'outdated':passed?'passed':'retry'};
+      if(sourceNeedsReview)dueAt=new Date(sourceErrorTime+20*60000).toISOString();
+      return {article,history,latest,current,passed,dueAt,wrongCount,newerSource,sourceNeedsReview,consecutiveFullScores,fullScoreDays:fullScoreDates.size,stableRecall:passed&&fullScoreDates.size>=2,wrongSource:useSourcePriority?'source':current?'latest':'backup',status:!latest?'untested':!current?'outdated':passed?'passed':'retry'};
     });
     const measured=states.filter(s=>s.latest&&s.current);
     const recentEarned=measured.reduce((n,s)=>n+s.latest.earned,0),recentTotal=measured.reduce((n,s)=>n+s.latest.total,0);
-    return {states,attempts:all,passed:states.filter(s=>s.passed).length,untested:states.filter(s=>!s.latest).length,
+    return {states,attempts:all,passed:states.filter(s=>s.passed).length,stableRecall:states.filter(s=>s.stableRecall).length,untested:states.filter(s=>!s.latest).length,
       needsRetry:states.filter(s=>s.latest&&!s.passed).length,latestAccuracy:recentTotal ? recentEarned/recentTotal : null,
       cumulativeEarned:all.reduce((n,a)=>n+a.earned,0),cumulativeTotal:all.reduce((n,a)=>n+a.total,0)};
   }
@@ -60,10 +74,11 @@
   }
   function buildPlan(articles, attempts, options = {}, now = new Date()) {
     const config=settings(options), result=summary(articles,attempts),today=dateKey(now),examDate=dateKey(config.examAt);
-    const eligible=result.attempts.filter(a=>a.durationSeconds>=45&&a.durationSeconds<=1200);
+    const versions=new Map(articles.map(a=>[a.id,{version:a.version,marks:a.marks}]));
+    const eligible=result.attempts.filter(a=>a.version===versions.get(a.passageId)?.version&&a.total===versions.get(a.passageId)?.marks&&a.durationSeconds>=45&&a.durationSeconds<=1200);
     const globalMinutes=median(eligible.map(a=>a.durationSeconds/60)) || config.firstTestMinutes;
     function estimate(state,retest=false) {
-      const own=state.history.filter(a=>a.durationSeconds>=45&&a.durationSeconds<=1200).map(a=>a.durationSeconds/60);
+      const own=state.history.filter(a=>a.version===state.article.version&&a.total===state.article.marks&&a.durationSeconds>=45&&a.durationSeconds<=1200).map(a=>a.durationSeconds/60);
       const base=Math.max(1.5,Math.min(15,median(own)||globalMinutes));
       return Math.ceil(retest ? Math.max(2,base*.65)+(state.passed?0:2) : base);
     }
@@ -100,5 +115,28 @@
       requiredMinutes,availableMinutes,gapMinutes:Math.max(0,requiredMinutes-availableMinutes),
       unplanned:targetRemaining.filter(s=>!scheduled.has(s.article.id)),estimatedFirstMinutes:Math.max(1.5,globalMinutes)};
   }
-  return {defaults,dateKey,addDays,settings,validAttempt,uniqueAttempts,summary,comparePriority,buildPlan};
+  function nextAction(plan,drafts=[],now=new Date()) {
+    const instant=Date.parse(now),states=new Map(plan.states.map(s=>[s.article.id,s]));
+    if(plan.today>=plan.examDate){
+      const state=plan.states.filter(s=>!s.passed&&s.wrongCount>0).sort(comparePriority)[0];
+      return {kind:'exam',article:state?.article};
+    }
+    const day=plan.days.find(d=>d.date===plan.today);
+    if(!day)return {kind:'done'};
+    if(day.budget-day.spentMinutes-day.reserveMinutes<=0)return {kind:'budget'};
+    const ready=s=>!s.latest||!s.dueAt||Date.parse(s.dueAt)<=instant;
+    const hasAnswer=snapshot=>Object.values(snapshot?.responses||{}).some(value=>typeof value==='string'&&value.trim())||
+      Object.values(snapshot?.sets||{}).some(values=>Array.isArray(values)&&values.some(value=>typeof value==='string'&&value.trim()));
+    const resumable=drafts.filter(d=>{
+      const state=states.get(d.passageId);
+      return state&&d.version===state.article.version&&hasAnswer(d.snapshot)&&ready(state);
+    }).sort((a,b)=>(Date.parse(b.updatedAt)||0)-(Date.parse(a.updatedAt)||0)||comparePriority(states.get(a.passageId),states.get(b.passageId)));
+    if(resumable.length){const draft=resumable[0],state=states.get(draft.passageId);return {kind:'resume',article:state.article,state,draft};}
+    const task=day.tasks.find(t=>!t.notBefore||Date.parse(t.notBefore)<=instant);
+    if(task){const state=states.get(task.id);return {kind:'test',task,article:state.article,state};}
+    const waiting=day.tasks.filter(t=>t.notBefore&&Date.parse(t.notBefore)>instant).sort((a,b)=>Date.parse(a.notBefore)-Date.parse(b.notBefore))[0];
+    if(waiting){const state=states.get(waiting.id);return {kind:'review',task:waiting,article:state.article,state,readyAt:waiting.notBefore};}
+    return {kind:'done',nextDate:plan.days.find(d=>d.date>plan.today&&d.tasks.length)?.date};
+  }
+  return {defaults,dateKey,addDays,settings,validAttempt,uniqueAttempts,summary,comparePriority,buildPlan,nextAction};
 });

@@ -53,7 +53,7 @@
   function updateStudyStats() {
     if (!window.ReadingStudyStore || !window.ReadingStudyCore) return;
     const stored = ReadingStudyStore.list();
-    const summary = ReadingStudyCore.summary(data.map(p=>({id:p.id,marks:p.questionCount,version:p.testVersion})),stored.attempts);
+    const summary = ReadingStudyCore.summary(ReadingStudyStore.enrichArticles(data.map(p=>({id:p.id,marks:p.questionCount,version:p.testVersion,title:p.title}))),stored.attempts);
     const progress = document.getElementById('catalog-study-progress');
     if(progress)progress.textContent = '自测满分 '+summary.passed+' / '+data.length;
     for(const state of summary.states) {

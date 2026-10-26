@@ -5,7 +5,51 @@
   const navs = [...document.querySelectorAll('[data-question]')];
   const select = document.querySelector('#attempt-select');
   const originalText = new Map([...document.querySelectorAll('.evidence-text')].map(el => [el, el.textContent]));
-  let onlyWrong = false;
+  let onlyWrong = new URLSearchParams(location.search).get('wrong')==='1';
+  const baselineEvents=Object.fromEntries(Object.entries(data.events).map(([id,events])=>[id,[...events]]));
+  const importedOptions=new Set();
+  const localDate=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+  const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  function readableAnswers(values,fallback) {
+    const index=window.ReadingSourceBackupIndex;
+    const flat=values.flatMap(v=>Array.isArray(v)?v:[v]).filter(v=>typeof v==='string'&&v.trim());
+    if(!flat.length)return '<p class="no-history">'+escape(fallback||'未作答')+'</p>';
+    return flat.map(value=>{
+      const en=index?.options?.[value]||value,zh=index?.optionsZh?.[value]||index?.answerGlosses?.[value.trim().toLocaleLowerCase()];
+      return '<p class="answer-en">'+escape(en)+'</p>'+(zh?'<p class="answer-zh">'+escape(zh)+'</p>':'');
+    }).join('');
+  }
+  function refreshRecords() {
+    if(!window.ReadingStudyStore||!window.ReadingSourceBackupIndex||!data.passageId)return;
+    const passage=ReadingSourceBackupIndex.passages.find(p=>p.id===data.passageId);if(!passage)return;
+    data.events=Object.fromEntries(Object.entries(baselineEvents).map(([id,events])=>[id,[...events]]));
+    const choices=new Map(),add=(sourceId,event,label)=>{
+      const events=data.events[sourceId]||=[];
+      if(!events.some(e=>e.attemptId===event.attemptId)){events.push(event);events.sort((a,b)=>a.submittedAt.localeCompare(b.submittedAt));choices.set(event.attemptId,{label,date:event.submittedAt});}
+    };
+    for(const attempt of ReadingStudyStore.listSources().attempts.filter(a=>a.passageId===data.passageId))for(const group of attempt.groups){
+      add(group.sourceId,{attemptId:attempt.sourceId,submittedAt:attempt.submittedAt,status:group.status,
+        html:readableAnswers(group.answers.map(a=>a.value),'原备份未保存个人答案'),localTime:'原站 · '+localDate.format(new Date(attempt.submittedAt))},'原站导入 · '+localDate.format(new Date(attempt.submittedAt))+(attempt.fullCoverage?'':' · 部分题组'));
+    }
+    for(const attempt of ReadingStudyStore.list().attempts.filter(a=>a.passageId===data.passageId&&a.version===data.testVersion)){
+      const grades=new Map(attempt.outcomes.map(g=>[g.id,g]));
+      for(const group of passage.groups){
+        const grade=grades.get(group.id);if(!grade)continue;
+        const values=group.evaluation==='unordered-membership'?(attempt.snapshot.sets[group.id]||[]):group.testResponses.map(id=>attempt.snapshot.responses[id]);
+        const filled=values.some(v=>typeof v==='string'&&v.trim());
+        const status=grade.earned===grade.total?'correct':grade.earned>0?'partial':filled?'incorrect':'unanswered';
+        add(group.sourceId,{attemptId:'self:'+attempt.id,submittedAt:attempt.submittedAt,status,html:readableAnswers(values),localTime:'自测 · '+localDate.format(new Date(attempt.submittedAt))},'自测 · '+localDate.format(new Date(attempt.submittedAt))+' · '+attempt.earned+'/'+attempt.total);
+      }
+    }
+    const selected=select.value;
+    for(const option of [...select.options])if(importedOptions.has(option.value))option.remove();
+    importedOptions.clear();
+    const fragment=document.createDocumentFragment();
+    for(const [id,choice] of [...choices].sort((a,b)=>b[1].date.localeCompare(a[1].date)))if(![...select.options].some(o=>o.value===id)){
+      const option=document.createElement('option');option.value=id;option.textContent=choice.label;fragment.append(option);importedOptions.add(id);
+    }
+    select.options[0].after(fragment);select.value=[...select.options].some(o=>o.value===selected)?selected:'latest';
+  }
   function refresh() {
     let visible = 0;
     for (const card of cards) {
@@ -119,12 +163,18 @@
   }));
   document.querySelector('#wrong-toggle').addEventListener('click', () => { onlyWrong = !onlyWrong; refresh(); });
   select.addEventListener('change', refresh);
+  addEventListener('storage',()=>{refreshRecords();refresh();});
+  addEventListener('reading-study-updated',()=>{refreshRecords();refresh();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){refreshRecords();refresh();}});
   document.querySelectorAll('.inline-answer').forEach(link => link.addEventListener('click', event => {
     event.preventDefault();
     onlyWrong = false; refresh();
     document.getElementById(link.dataset.review).scrollIntoView({behavior:'smooth',block:'center'});
   }));
   document.querySelectorAll('[data-pane]').forEach(button => button.addEventListener('click', () => setPane(button.dataset.pane)));
+  refreshRecords();
+  const sourceChoice=new URLSearchParams(location.search).get('source');
+  if(sourceChoice&&[...select.options].some(option=>option.value===sourceChoice))select.value=sourceChoice;
   refresh();
   if (location.hash) {
     const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
