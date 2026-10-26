@@ -117,8 +117,8 @@
         number.className = 'evidence-marker';
         number.textContent = evidence.number;
         number.setAttribute('aria-label', '第 ' + evidence.number + ' 题依据');
-        mark.append(number, document.createTextNode(source.slice(range.start, range.end)));
-        fragment.append(mark);
+        mark.textContent = source.slice(range.start, range.end);
+        fragment.append(number, mark);
         firstMark ||= mark;
         cursor = range.end;
       }
