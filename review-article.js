@@ -7,16 +7,61 @@
   const originalText = new Map([...document.querySelectorAll('.evidence-text')].map(el => [el, el.textContent]));
   const FRAMEWORK_FLASH_MS = 3000;
   let frameworkFlashTimer;
+  const evidenceTargets = new Map();
   function clearFrameworkFlash() {
     clearTimeout(frameworkFlashTimer);
+    document.querySelectorAll('.passage-unit.framework-focused').forEach(el => el.classList.remove('framework-focused'));
     document.querySelectorAll('.paragraph-en.framework-flash').forEach(el => el.classList.remove('framework-flash'));
   }
   function flashFrameworkParagraph(target) {
     clearFrameworkFlash();
     const english = target.querySelector('.paragraph-en');
     if (!english) return;
+    // Commit the removal so repeated activation restarts the CSS deadline too.
+    void english.offsetWidth;
     english.classList.add('framework-flash');
     frameworkFlashTimer = setTimeout(() => english.classList.remove('framework-flash'), FRAMEWORK_FLASH_MS);
+  }
+  function renderPersistentEvidence() {
+    const byBlock = new Map();
+    for (const [question, evidence] of Object.entries(data.evidence || {})) {
+      for (const span of evidence.spans || []) {
+        if (!byBlock.has(span.block)) byBlock.set(span.block, []);
+        byBlock.get(span.block).push({...span, question, number: evidence.number});
+      }
+    }
+    for (const [block, ranges] of byBlock) {
+      const text = document.getElementById(block)?.querySelector('.evidence-text');
+      if (!text) continue;
+      const source = originalText.get(text);
+      const valid = ranges.filter(range => range.start >= 0 && range.end <= source.length && range.end > range.start);
+      const points = [...new Set([0, source.length, ...valid.flatMap(range => [range.start, range.end])])].sort((a, b) => a - b);
+      const fragment = document.createDocumentFragment();
+      for (let i = 0; i < points.length - 1; i++) {
+        const start = points[i], end = points[i + 1];
+        const active = valid.filter(range => range.start <= start && range.end >= end);
+        const starting = valid.filter(range => range.start === start);
+        if (starting.length) {
+          const numbers = [...new Set(starting.map(range => range.number))];
+          const marker = document.createElement('sup');
+          marker.className = 'evidence-marker';
+          marker.textContent = numbers.join('、');
+          marker.setAttribute('aria-label', '第 ' + numbers.join('、') + ' 题依据');
+          fragment.append(marker);
+        }
+        if (!active.length) {
+          fragment.append(document.createTextNode(source.slice(start, end)));
+          continue;
+        }
+        const mark = document.createElement('mark');
+        mark.className = 'evidence-highlight';
+        mark.dataset.evidenceQuestions = [...new Set(active.map(range => range.question))].join(' ');
+        mark.textContent = source.slice(start, end);
+        for (const range of active) if (!evidenceTargets.has(range.question)) evidenceTargets.set(range.question, mark);
+        fragment.append(mark);
+      }
+      text.replaceChildren(fragment);
+    }
   }
   let onlyWrong = new URLSearchParams(location.search).get('wrong')==='1';
   const baselineEvents=Object.fromEntries(Object.entries(data.events).map(([id,events])=>[id,[...events]]));
@@ -97,48 +142,9 @@
     if (!target) return;
     clearFrameworkFlash();
     document.querySelectorAll('.passage-unit.located').forEach(el => el.classList.remove('located'));
-    document.querySelectorAll('.evidence-text[data-located]').forEach(el => {
-      el.textContent = originalText.get(el);
-      delete el.dataset.located;
-    });
     document.querySelectorAll('.evidence-context-note').forEach(el => el.remove());
     const evidence = data.evidence?.[question];
-    const byBlock = new Map();
-    for (const span of evidence?.spans || []) {
-      if (!byBlock.has(span.block)) byBlock.set(span.block, []);
-      byBlock.get(span.block).push(span);
-    }
-    let firstMark;
-    for (const [blockId, ranges] of byBlock) {
-      const text = document.getElementById(blockId)?.querySelector('.evidence-text');
-      if (!text) continue;
-      const source = originalText.get(text);
-      const merged = [];
-      for (const range of ranges.sort((a, b) => a.start - b.start)) {
-        const previous = merged[merged.length - 1];
-        if (previous && range.start <= previous.end) previous.end = Math.max(previous.end, range.end);
-        else merged.push({...range});
-      }
-      const fragment = document.createDocumentFragment();
-      let cursor = 0;
-      for (const range of merged) {
-        if (range.start < 0 || range.end > source.length || range.end <= range.start) continue;
-        fragment.append(document.createTextNode(source.slice(cursor, range.start)));
-        const mark = document.createElement('mark');
-        mark.className = 'evidence-highlight';
-        const number = document.createElement('sup');
-        number.className = 'evidence-marker';
-        number.textContent = evidence.number;
-        number.setAttribute('aria-label', '第 ' + evidence.number + ' 题依据');
-        mark.textContent = source.slice(range.start, range.end);
-        fragment.append(number, mark);
-        firstMark ||= mark;
-        cursor = range.end;
-      }
-      fragment.append(document.createTextNode(source.slice(cursor)));
-      text.replaceChildren(fragment);
-      text.dataset.located = question;
-    }
+    const firstMark = evidenceTargets.get(question);
     if (!firstMark) {
       target.classList.add('located');
       const note = document.createElement('p');
@@ -185,6 +191,8 @@
     document.getElementById(link.dataset.review).scrollIntoView({behavior:'smooth',block:'center'});
   }));
   document.querySelectorAll('[data-pane]').forEach(button => button.addEventListener('click', () => setPane(button.dataset.pane)));
+  clearFrameworkFlash();
+  renderPersistentEvidence();
   refreshRecords();
   const sourceChoice=new URLSearchParams(location.search).get('source');
   if(sourceChoice&&[...select.options].some(option=>option.value===sourceChoice))select.value=sourceChoice;
