@@ -5,6 +5,19 @@
   const navs = [...document.querySelectorAll('[data-question]')];
   const select = document.querySelector('#attempt-select');
   const originalText = new Map([...document.querySelectorAll('.evidence-text')].map(el => [el, el.textContent]));
+  const FRAMEWORK_FLASH_MS = 3000;
+  let frameworkFlashTimer;
+  function clearFrameworkFlash() {
+    clearTimeout(frameworkFlashTimer);
+    document.querySelectorAll('.paragraph-en.framework-flash').forEach(el => el.classList.remove('framework-flash'));
+  }
+  function flashFrameworkParagraph(target) {
+    clearFrameworkFlash();
+    const english = target.querySelector('.paragraph-en');
+    if (!english) return;
+    english.classList.add('framework-flash');
+    frameworkFlashTimer = setTimeout(() => english.classList.remove('framework-flash'), FRAMEWORK_FLASH_MS);
+  }
   let onlyWrong = new URLSearchParams(location.search).get('wrong')==='1';
   const baselineEvents=Object.fromEntries(Object.entries(data.events).map(([id,events])=>[id,[...events]]));
   const importedOptions=new Set();
@@ -82,7 +95,7 @@
     if (!block) return;
     const target = document.getElementById(block);
     if (!target) return;
-    document.querySelectorAll('.framework-focused').forEach(el => el.classList.remove('framework-focused'));
+    clearFrameworkFlash();
     document.querySelectorAll('.passage-unit.located').forEach(el => el.classList.remove('located'));
     document.querySelectorAll('.evidence-text[data-located]').forEach(el => {
       el.textContent = originalText.get(el);
@@ -145,11 +158,11 @@
     if (!target) return;
     event.preventDefault();
     setPane('passage');
-    document.querySelectorAll('.framework-focused').forEach(el => el.classList.remove('framework-focused'));
-    target.classList.add('framework-focused');
+    // Keep focus on the source unit; briefly mark only its English paragraph.
     target.setAttribute('tabindex', '-1');
     target.focus({preventScroll:true});
     target.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth',block:'start'});
+    flashFrameworkParagraph(target);
   }));
   document.querySelectorAll('.locate-button[data-locate]').forEach(button => button.addEventListener('click', () => locate(button.dataset.locate, button.closest('.question-card').id)));
   navs.forEach(button => button.addEventListener('click', () => {
