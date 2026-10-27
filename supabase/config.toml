@@ -1,0 +1,6 @@
+project_id = "hgdnugbunlmhaaackqjc"
+
+# The handler authenticates every space request with its derived pairing token.
+[functions.reading-sync]
+verify_jwt = false
+entrypoint = "./functions/reading-sync/index.js"

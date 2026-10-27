@@ -4,7 +4,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(root,protocol){
   'use strict';
   const CONNECTION='zyz-reading-sync-connection-v1',DEVICE='zyz-reading-sync-device-v1',SETTINGS='zyz-reading-plan-v1',META='zyz-reading-sync-settings-v1';
-  const ENDPOINT='https://zyz-reading-sync.chalky-grass-0591.chatgpt.site';
+  const ENDPOINT='https://hgdnugbunlmhaaackqjc.supabase.co/functions/v1/reading-sync';
   const settingNames=['dailyMinutes'];
   function create(options={}){
     const storage=options.storage||root.localStorage,store=options.store||root.ReadingStudyStore,core=options.core||root.ReadingStudyCore;
@@ -17,7 +17,9 @@
     const write=(key,value)=>storage.setItem(key,JSON.stringify(value));
     const emit=patch=>{state={...state,...patch};if(options.onState)options.onState({...state});};
     const checkpoint=gen=>{if(gen!==generation||!connection)throw new Error('sync-disconnected');};
-    const progressKey=keys=>'zyz-reading-sync-space-v1:'+keys.spaceId;
+    // Cursors and acknowledgements belong to a backend. Reusing the old D1
+    // cursor would skip imported Postgres rows and suppress local history uploads.
+    const progressKey=keys=>'zyz-reading-sync-space-v1:'+keys.spaceId+':'+encodeURIComponent(endpoint);
     function progress(keys){const p=read(progressKey(keys),{});return {cursor:Number.isSafeInteger(p.cursor)&&p.cursor>=0?p.cursor:0,acks:Array.isArray(p.acks)?p.acks:[],conflicts:Array.isArray(p.conflicts)?p.conflicts:[],lastSyncedAt:p.lastSyncedAt||null};}
     function device(){let id=storage.getItem(DEVICE);if(!id){id=protocol.createCode(crypto).slice(5);storage.setItem(DEVICE,id);}return id;}
     function settingsMeta(){
