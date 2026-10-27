@@ -42,11 +42,23 @@
         const active = valid.filter(range => range.start <= start && range.end >= end);
         const starting = valid.filter(range => range.start === start);
         if (starting.length) {
-          const numbers = [...new Set(starting.map(range => range.number))];
+          const questions = [...new Map(starting.map(range => [range.question, range.number]))];
           const marker = document.createElement('sup');
           marker.className = 'evidence-marker';
-          marker.textContent = numbers.join('、');
-          marker.setAttribute('aria-label', '第 ' + numbers.join('、') + ' 题依据');
+          questions.forEach(([question, number], index) => {
+            if (index) marker.append(document.createTextNode('、'));
+            const link = document.createElement('a');
+            link.className = 'evidence-question-link';
+            link.href = '#' + question;
+            link.dataset.evidenceQuestion = question;
+            link.textContent = number;
+            link.setAttribute('aria-label', '跳到第 ' + number + ' 题');
+            link.addEventListener('click', event => {
+              event.preventDefault();
+              showEvidenceQuestion(question);
+            });
+            marker.append(link);
+          });
           fragment.append(marker);
         }
         if (!active.length) {
@@ -158,6 +170,18 @@
   function setPane(pane) {
     document.body.dataset.mobilePane = pane;
     document.querySelectorAll('[data-pane]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.pane === pane)));
+  }
+  function showEvidenceQuestion(question) {
+    const card = document.getElementById(question);
+    if (!card) return;
+    // The requested question may currently be hidden by the wrong-answer filter.
+    onlyWrong = false;
+    refresh();
+    setPane('questions');
+    card.setAttribute('tabindex', '-1');
+    card.focus({preventScroll:true});
+    card.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth',block:'start'});
+    navs.forEach(button => button.setAttribute('aria-current', String(button.dataset.question === question)));
   }
   document.querySelectorAll('[data-framework-target]').forEach(link => link.addEventListener('click', event => {
     const target = document.getElementById(link.dataset.frameworkTarget);

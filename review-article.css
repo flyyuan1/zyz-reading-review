@@ -230,3 +230,6 @@ body.reader{
 
 /* The cue expires visually even if a browser delays its JavaScript timer. */
 @keyframes framework-source-cue{from{background-color:#f3f7fc;box-shadow:0 0 0 6px #f3f7fc;outline:2px solid #7eaad6;outline-offset:6px}to{background-color:transparent;box-shadow:none;outline:0 solid transparent;outline-offset:0}}
+
+/* Source question numbers navigate to the matching answer card. */
+.evidence-question-link{color:inherit;text-decoration:none;cursor:pointer;padding:3px 2px;margin:-3px -2px}.evidence-question-link:hover{text-decoration:underline;text-underline-offset:2px}.evidence-question-link:focus-visible{outline:2px solid #528cdb;outline-offset:2px;border-radius:2px}.question-card[tabindex="-1"]:focus{outline:none}
