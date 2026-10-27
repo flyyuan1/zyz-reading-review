@@ -26,6 +26,10 @@
     const action=ReadingStudyCore.nextAction(plan,drafts());
     primary.hidden=secondary.hidden=true;recall.hidden=true;panel.dataset.state=action.kind;
     title.textContent=action.article?.title||({budget:'今天先到这里',done:'今天的任务已安排完毕',exam:'考前轻量回顾'})[action.kind]||'按整篇文章继续复习';
+    if(action.article?.part){
+      const badge=document.createElement('span');badge.className='position-badge';badge.textContent='P'+action.article.part;
+      title.prepend(badge);
+    }
     description.textContent='';
     if(action.kind==='resume'||action.kind==='test'){
       primary.textContent=action.kind==='resume'?'继续本篇':'开始今天任务';primary.href='逐篇测试/'+action.article.file+'?from=plan';primary.hidden=false;

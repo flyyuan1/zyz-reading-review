@@ -13,6 +13,10 @@
     return Math.floor(rounded/60)+' 小时'+(rounded%60?' '+rounded%60+' 分钟':'');
   }
   function message(text) {$('study-message').hidden=!text;$('study-message').textContent=text;}
+  function formatDuration(value) {
+    const seconds=Math.max(0,Math.floor(value));
+    return Math.floor(seconds/60)+'分'+String(seconds%60).padStart(2,'0')+'秒';
+  }
   function errorLabel(state) {
     if(state.wrongSource==='source')return state.wrongCount?'新原站记录错题 '+state.wrongCount+' 题':'原站已正确，待本站回忆确认';
     if(state.current)return state.passed?'最近满分':'最近错／未答 '+state.wrongCount+' 题';
@@ -35,7 +39,7 @@
         const details=node('details',undefined,'attempt-details');details.append(node('summary',state.history.length+' 次测试记录'));
         const list=node('ol');
         for(const attempt of [...state.history].reverse().slice(0,10)) {
-          const li=node('li',momentFormat.format(new Date(attempt.submittedAt))+' · '+attempt.earned+'/'+attempt.total+' · '+(attempt.assisted?'翻译辅助':'无翻译')+' · '+formatMinutes(attempt.durationSeconds/60));
+          const li=node('li',momentFormat.format(new Date(attempt.submittedAt))+' · '+attempt.earned+'/'+attempt.total+' · '+(attempt.assisted?'翻译辅助':'无翻译')+' · 用时 '+formatDuration(attempt.durationSeconds));
           if(attempt.version===a.version)li.append(link('查看','逐篇测试/'+a.file+'?attempt='+encodeURIComponent(attempt.id)));
           else li.append(node('span',' · 旧题库版本'));
           list.append(li);

@@ -12,9 +12,12 @@
   const summary = document.getElementById('test-summary');
   const status = document.getElementById('save-status');
   const announcement = document.getElementById('test-announcement');
+  const clock = document.getElementById('test-clock');
+  const clockLabel = document.getElementById('test-clock-label');
   let editing = true, assisted = false, previewingLast = false, record = {}, draft = {responses:{},sets:{}};
   let storageAvailable = true;
-  let elapsedSeconds = 0,lastSavedClock = 0,lastActivity = Date.now();
+  let elapsedSeconds = 0,lastSavedClock = 0,lastClockTick = performance.now();
+  let clockRunning = !document.hidden,displayedDuration = 0;
   try {
     record = JSON.parse(localStorage.getItem(key) || '{}');
     if (!record || record.version !== data.version) record = {};
@@ -71,6 +74,7 @@
     }
   }
   function persist() {
+    updateElapsed();
     if(editing){record.draftElapsedSeconds=elapsedSeconds;record.draftUpdatedAt=new Date().toISOString();}
     try {
       localStorage.setItem(key, JSON.stringify({...record, version:data.version}));
@@ -115,10 +119,30 @@
     parent.append(el);
     return el;
   }
-  function showResults(snapshot, usedTranslation, save) {
+  function formatDuration(value) {
+    const seconds = Math.max(0,Math.floor(value));
+    return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
+  }
+  function updateElapsed() {
+    const now = performance.now();
+    if(editing && clockRunning)elapsedSeconds += Math.max(0,now-lastClockTick)/1000;
+    lastClockTick = now;
+  }
+  function renderClock() {
+    if(clock)clock.textContent = formatDuration(editing ? elapsedSeconds : displayedDuration);
+    if(clockLabel)clockLabel.textContent = editing ? '本篇用时' : previewingLast ? '历史用时' : '本次用时';
+  }
+  function showResults(snapshot, usedTranslation, save, historicalDuration = 0) {
+    updateElapsed();
+    if(!save && editing){
+      record.draft=readSnapshot();record.draftAssisted=assisted;persist();
+    }
     const result = ReadingTestCore.grade(data.groups, snapshot);
+    const durationSeconds = save ? Math.floor(elapsedSeconds) : Math.max(0,Number(historicalDuration)||0);
+    displayedDuration = durationSeconds;
     editing = false;
     previewingLast = !save;
+    renderClock();
     document.body.dataset.testState = 'submitted';
     applySnapshot(snapshot);
     controls.forEach(c => c.disabled = true);
@@ -126,9 +150,10 @@
     restart.textContent = save ? '重新测试' : '返回当前测试';
     setTranslations(true);
     summary.replaceChildren();
-    addText(summary, 'h2', '', '本次测试结果');
+    addText(summary, 'h2', '', save ? '本次测试结果' : '历史测试结果');
     const score = addText(summary, 'div', 'test-score', String(result.earned));
     addText(score, 'small', '', ' / ' + result.total + ' 分');
+    addText(summary, 'p', 'test-duration', (save ? '本次用时 ' : '历史用时 ')+formatDuration(durationSeconds));
     const wrong = Object.values(result.results).filter(r => r.status !== 'correct').length;
     addText(summary, 'p', '', wrong ? wrong + ' 个题组需要复习；下方保留了你的答案。' : '全部正确。可以稍后再次闭卷回忆。');
     addText(summary, 'p', '', usedTranslation ? '本次使用了翻译辅助，满分同样计入记忆进度。' : '本次交卷前未打开翻译，满分计入记忆进度。');
@@ -165,7 +190,7 @@
     }
     progress(snapshot);
     if (save) {
-      const submittedAt=new Date().toISOString(),durationSeconds=Math.round(elapsedSeconds);
+      const submittedAt=new Date().toISOString();
       const historyId=globalThis.crypto?.randomUUID?.() || Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
       const saved = saveShared(snapshot,usedTranslation,result,submittedAt,durationSeconds,historyId);
       record = {...record, draft:null, draftAssisted:false, draftElapsedSeconds:0,lastSubmission:{snapshot,assisted:usedTranslation,submittedAt,durationSeconds,historyId:saved.ok?historyId:undefined}};
@@ -184,7 +209,9 @@
     editing = true;assisted = resume ? !!record.draftAssisted : false;
     draft = resume ? record.draft : {responses:{},sets:{}};
     previewingLast = false;
-    elapsedSeconds=resume ? Math.max(0,Number(record.draftElapsedSeconds)||0) : 0;lastSavedClock=0;lastActivity=Date.now();
+    elapsedSeconds=resume ? Math.max(0,Number(record.draftElapsedSeconds)||0) : 0;
+    lastSavedClock=elapsedSeconds;lastClockTick=performance.now();clockRunning=!document.hidden;
+    renderClock();
     controls.forEach(c => c.disabled = false);
     applySnapshot(draft);
     document.body.dataset.testState = 'editing';
@@ -232,7 +259,7 @@
   });
   submit.addEventListener('click', () => showResults(readSnapshot(),assisted,true));
   restart.addEventListener('click', reset);
-  lastButton.addEventListener('click', () => { if (record.lastSubmission?.snapshot) showResults(record.lastSubmission.snapshot,record.lastSubmission.assisted,false); });
+  lastButton.addEventListener('click', () => { if (record.lastSubmission?.snapshot) showResults(record.lastSubmission.snapshot,record.lastSubmission.assisted,false,record.lastSubmission.durationSeconds); });
   addEventListener('reading-study-updated', event => {
     if(event.detail?.source!=='sync')return;
     const latest=ReadingStudyStore.list().attempts.filter(a=>a.passageId===data.passageId&&a.version===data.version).at(-1);
@@ -254,16 +281,20 @@
   const requestedId=new URLSearchParams(location.search).get('attempt');
   if(requestedId) {
     const requested=shared.attempts.find(a=>a.id===requestedId&&a.passageId===data.passageId&&a.version===data.version);
-    if(requested)showResults(requested.snapshot,requested.assisted,false);
+    if(requested)showResults(requested.snapshot,requested.assisted,false,requested.durationSeconds);
     else announcement.textContent='未找到可用于当前题库的历史记录，已打开新测试。';
   }
-  const clock=document.getElementById('test-clock');
-  ['pointerdown','keydown','scroll','input'].forEach(type=>document.addEventListener(type,()=>{lastActivity=Date.now();},{capture:true,passive:true}));
+  lastSavedClock=elapsedSeconds;
+  renderClock();
   setInterval(()=>{
-    if(editing&&!document.hidden&&Date.now()-lastActivity<120000)elapsedSeconds++;
-    if(clock)clock.textContent=Math.floor(elapsedSeconds/60)+':'+String(Math.round(elapsedSeconds)%60).padStart(2,'0');
+    updateElapsed();renderClock();
     if(editing&&elapsedSeconds-lastSavedClock>=15){record.draft=readSnapshot();record.draftAssisted=assisted;persist();lastSavedClock=elapsedSeconds;}
   },1000);
+  document.addEventListener('visibilitychange',()=>{
+    updateElapsed();clockRunning=!document.hidden;renderClock();
+    if(editing){record.draft=readSnapshot();record.draftAssisted=assisted;persist();}
+  });
   addEventListener('pagehide',()=>{if(editing){record.draft=readSnapshot();record.draftAssisted=assisted;persist();}});
+  addEventListener('pageshow',()=>{lastClockTick=performance.now();clockRunning=!document.hidden;renderClock();});
   if (!storageAvailable) status.textContent = '当前浏览器无法保存，请在离开前交卷核对';
 })();
