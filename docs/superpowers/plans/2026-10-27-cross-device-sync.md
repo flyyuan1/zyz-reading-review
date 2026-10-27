@@ -48,12 +48,12 @@ Files: root `review-sync-ui.js`, `review-sync.css`; Store change only if require
 
 Files: root generation scripts and all published HTML cache references; corresponding `github-pages-site` and `github-upload-checkout` assets; README and use guide; sync-service hosting manifest and release evidence.
 
-- [ ] Register one new Sites service, persist its exact identity, configure D1 and schema-only migrations, and package the Worker with supported helpers. Use native Sites tools for source credentials, publication and the approved publicly reachable API audience.
-- [ ] Deploy and test API with synthetic records and the actual GitHub origin. Only after readiness configure the client endpoint.
-- [ ] Add script/style references to the generators and all applicable pages. Run existing Node regression suites and browser checks against plan, catalog, review and test pages.
-- [ ] Commit/push only intended website assets to the existing GitHub repository. Verify production Pages serves new scripts and an API CORS request succeeds.
-- [ ] Run production two-browser tests proving initial merge, new submission propagation, offline retry, export/import compatibility and untouched drafts; record exact results without private study data.
-- [ ] Verify all design requirements against current files and runtime evidence. Mark steps complete only with evidence; return the live plan-page link and one-time pairing instructions.
+- [x] Register one new Sites service, persist its exact identity, configure D1 and schema-only migrations, and package the Worker with supported helpers. Use native Sites tools for source credentials, publication and the approved publicly reachable API audience.
+- [x] Deploy and test API with synthetic records and the actual GitHub origin. Only after readiness configure the client endpoint.
+- [x] Add script/style references to the generators and all applicable pages. Run existing Node regression suites and browser checks against plan, catalog, review and test pages.
+- [x] Commit/push only intended website assets to the existing GitHub repository. Verify production Pages serves new scripts and an API CORS request succeeds.
+- [x] Run production two-browser tests proving initial merge, new submission propagation, offline retry, export/import compatibility and untouched drafts; record exact results without private study data.
+- [x] Verify all design requirements against current files and runtime evidence. Mark steps complete only with evidence; return the live plan-page link and one-time pairing instructions.
 
 ## Review and execution authorization
 
