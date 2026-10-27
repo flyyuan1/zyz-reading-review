@@ -1,0 +1,17 @@
+.sentence-pair.sentence-hovered {
+  text-decoration-line: underline;
+  text-decoration-color: #57868e;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .17em;
+  text-decoration-skip-ink: auto;
+}
+.paragraph-zh .sentence-pair.sentence-hovered {
+  background-color: #e1edf2;
+  border-radius: 2px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+@media print {
+  .sentence-pair.sentence-hovered { text-decoration: none; }
+  .paragraph-zh .sentence-pair.sentence-hovered { background: transparent; }
+}
