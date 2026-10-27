@@ -26,7 +26,10 @@
     const body=$('article-results');body.replaceChildren();
     for(const state of states) {
       const a=state.article,tr=node('tr'),titleCell=node('td');
-      titleCell.append(node('strong',a.title,'results-title'),node('span',a.titleZh+' · '+({high:'高频',medium:'中频',low:'低频'})[a.frequency],'results-subtitle'));
+      const titleRow=node('div','','results-title-row');
+      if(a.part)titleRow.append(node('span','P'+a.part,'position-badge'));
+      titleRow.append(node('strong',a.title,'results-title'));
+      titleCell.append(titleRow,node('span',a.titleZh+' · '+({high:'高频',medium:'中频',low:'低频'})[a.frequency],'results-subtitle'));
       titleCell.append(node('span',errorLabel(state),'results-subtitle'));
       if(state.history.length) {
         const details=node('details',undefined,'attempt-details');details.append(node('summary',state.history.length+' 次测试记录'));
@@ -68,7 +71,10 @@
     for(const [i,task] of day.tasks.entries()) {
       const state=plan.states.find(s=>s.article.id===task.id),a=state.article,li=node('li'),copy=node('div',undefined,'day-task-copy');
       const waiting=task.kind!=='first'&&ReadingStudyCore.dateKey(task.notBefore)===plan.today&&Date.parse(task.notBefore)>Date.now();
-      copy.append(node('strong',a.title),node('small',errorLabel(state)+' · '+({first:'首测',retry:'错题复习＋复测',confirm:'满分后的次日复测'})[task.kind]+' · 约 '+task.minutes+' 分钟'+(waiting?' · '+momentFormat.format(new Date(task.notBefore))+' 后再测':'')));
+      const titleRow=node('div','','day-task-title');
+      if(a.part)titleRow.append(node('span','P'+a.part,'position-badge'));
+      titleRow.append(node('strong',a.title));
+      copy.append(titleRow,node('small',errorLabel(state)+' · '+({first:'首测',retry:'错题复习＋复测',confirm:'满分后的次日复测'})[task.kind]+' · 约 '+task.minutes+' 分钟'+(waiting?' · '+momentFormat.format(new Date(task.notBefore))+' 后再测':'')));
       li.append(node('span',String(i+1).padStart(2,'0'),'task-sequence'),copy,link(waiting?'先复习':'测试',(waiting?'逐篇复习/':'逐篇测试/')+a.file));$('day-tasks').append(li);
     }
     $('day-reserve').textContent=day.past?'已完成测试 '+day.completedAttempts+' 次，记录用时 '+formatMinutes(day.spentMinutes)+'。':

@@ -119,3 +119,6 @@ body.study{--muted:#61705c}
   .results-table td:nth-child(3)::before{content:"后续安排"}
   .results-actions a{min-height:44px;flex:1;font-size:14px}
 }
+
+.results-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.day-task-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}

@@ -233,3 +233,5 @@ body.reader{
 
 /* Source question numbers navigate to the matching answer card. */
 .evidence-question-link{color:inherit;text-decoration:none;cursor:pointer;padding:3px 2px;margin:-3px -2px}.evidence-question-link:hover{text-decoration:underline;text-underline-offset:2px}.evidence-question-link:focus-visible{outline:2px solid #528cdb;outline-offset:2px;border-radius:2px}.question-card[tabindex="-1"]:focus{outline:none}
+
+.position-badge{display:inline-block;vertical-align:middle;margin-right:9px;padding:2px 8px;border-radius:7px;background:#eff1ef;border:1px solid #a7aea7;color:#5e6b62;font-size:11px;font-weight:650;line-height:1.4;flex:none}
