@@ -20,29 +20,29 @@ API is `PUT /v1/spaces/{spaceId}` (idempotently create), `GET /v1/spaces/{spaceI
 
 Files: `../sync-service/worker/index.js`, `../sync-service/drizzle/0000_sync.sql`, `../sync-service/drizzle/meta/_journal.json`, `../sync-service/tests/worker.test.mjs`.
 
-- [ ] Add failing Node tests for unauthorized access, two isolated spaces, replay-idempotent writes, pagination, malformed envelopes, forbidden origin and oversized requests.
-- [ ] Implement exported `fetch(request,env)` using `env.DB`, parameterized SQL, transactional batch writes, hashed credentials and no-store responses. Do not log secrets. Use the bound migration tables, never runtime CREATE TABLE.
-- [ ] Run `node --test tests/worker.test.mjs`, expecting every behavioral test to pass.
-- [ ] Review against the API contract, then inspect query authorization and limit enforcement.
+- [x] Add failing Node tests for unauthorized access, two isolated spaces, replay-idempotent writes, pagination, malformed envelopes, forbidden origin and oversized requests.
+- [x] Implement exported `fetch(request,env)` using `env.DB`, parameterized SQL, transactional batch writes, hashed credentials and no-store responses. Do not log secrets. Use the bound migration tables, never runtime CREATE TABLE.
+- [x] Run `node --test tests/worker.test.mjs`, expecting every behavioral test to pass.
+- [x] Review against the API contract, then inspect query authorization and limit enforcement.
 
 ## Task 2: Browser protocol and synchronization engine
 
 Files: root `review-sync-protocol.js`, `review-sync-client.js`, `review-sync.test.cjs`.
 
-- [ ] Test crypto round trips, domain separation, tamper rejection and deterministic content IDs.
-- [ ] Implement the shared protocol and a client factory `ReadingSyncClient.create({storage,store,core,sourceBackup,sourceIndex,endpoint,fetch,crypto,onState})`; return `createSpace()`, `join(code)`, `sync()`, `disconnect()`, `getCode()` and `getState()`. Allow browser defaults and test injection.
-- [ ] Persist connection, per-space cursor and acknowledgements; serialize runs, use limited encrypted batches, pull and merge remote data before advancing cursors, and upload local additions. Retain conflicts in cloud and expose their count without overwriting reliable local records. Never touch test draft keys.
-- [ ] Test two isolated stores merging their prior histories, new records, retries, quota failure before cursor updates, source enrichment/conflict, settings field merge and disconnect preservation.
-- [ ] Run `node --test review-sync.test.cjs` and existing Store/source tests. Review spec compliance, then review failure recovery and crypto boundary.
+- [x] Test crypto round trips, domain separation, tamper rejection and deterministic content IDs.
+- [x] Implement the shared protocol and a client factory `ReadingSyncClient.create({storage,store,core,sourceBackup,sourceIndex,endpoint,fetch,crypto,onState})`; return `createSpace()`, `join(code)`, `sync()`, `disconnect()`, `getCode()` and `getState()`. Allow browser defaults and test injection.
+- [x] Persist connection, per-space cursor and acknowledgements; serialize runs, use limited encrypted batches, pull and merge remote data before advancing cursors, and upload local additions. Retain conflicts in cloud and expose their count without overwriting reliable local records. Never touch test draft keys.
+- [x] Test two isolated stores merging their prior histories, new records, retries, quota failure before cursor updates, source enrichment/conflict, settings field merge and disconnect preservation.
+- [x] Run `node --test review-sync.test.cjs` and existing Store/source tests. Review spec compliance, then review failure recovery and crypto boundary.
 
 ## Task 3: UI and lifecycle
 
 Files: root `review-sync-ui.js`, `review-sync.css`; Store change only if required to emit settings-update metadata.
 
-- [ ] Add a responsive panel to the plan page, and compact status/link on other pages. Use buttons for create, pair, copy code/link, sync now and disconnect. Display errors with retry and distinguish pending/offline from success.
-- [ ] Strip pairing fragments immediately, never auto-replace an existing different connection, and do not expose a secret until the user requests copy/display. Clipboard failure must provide selectable text.
-- [ ] Trigger sync on submitted/imported records, visibility, online and timed visible checks; disconnect cancels timers and stale work. Never clear records or interfere with a live test draft.
-- [ ] Verify keyboard interactions, phone width and desktop width with two independent browser contexts.
+- [x] Add a responsive panel to the plan page, and compact status/link on other pages. Use buttons for create, pair, copy code/link, sync now and disconnect. Display errors with retry and distinguish pending/offline from success.
+- [x] Strip pairing fragments immediately, never auto-replace an existing different connection, and do not expose a secret until the user requests copy/display. Clipboard failure must provide selectable text.
+- [x] Trigger sync on submitted/imported records, visibility, online and timed visible checks; disconnect cancels timers and stale work. Never clear records or interfere with a live test draft.
+- [x] Verify keyboard interactions, phone width and desktop width with two independent browser contexts.
 
 ## Task 4: Integrate, publish and audit
 

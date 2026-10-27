@@ -233,6 +233,14 @@
   submit.addEventListener('click', () => showResults(readSnapshot(),assisted,true));
   restart.addEventListener('click', reset);
   lastButton.addEventListener('click', () => { if (record.lastSubmission?.snapshot) showResults(record.lastSubmission.snapshot,record.lastSubmission.assisted,false); });
+  addEventListener('reading-study-updated', event => {
+    if(event.detail?.source!=='sync')return;
+    const latest=ReadingStudyStore.list().attempts.filter(a=>a.passageId===data.passageId&&a.version===data.version).at(-1);
+    if(!latest||record.lastSubmission?.submittedAt>=latest.submittedAt)return;
+    record.lastSubmission={snapshot:latest.snapshot,assisted:latest.assisted,submittedAt:latest.submittedAt,durationSeconds:latest.durationSeconds,historyId:latest.id};
+    lastButton.hidden=false;
+    if(editing)status.textContent='已收到另一设备的历史成绩；当前草稿继续保留';
+  });
   document.querySelectorAll('[data-pane]').forEach(b => b.addEventListener('click', () => setPane(b.dataset.pane)));
   document.querySelectorAll('[data-test-question]').forEach(b => b.addEventListener('click', () => {
     const g = groups.get(b.dataset.testQuestion);

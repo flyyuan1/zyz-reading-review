@@ -19,7 +19,29 @@
     } catch(error) {return {ok:false,error:'浏览器未能保存本次统计，请导出当前记录备份。'};}
   }
   function getSettings() {try{return ReadingStudyCore.settings(JSON.parse(localStorage.getItem(settingsKey)||'{}'));}catch(_){return ReadingStudyCore.settings();}}
-  function saveSettings(value) {try{localStorage.setItem(settingsKey,JSON.stringify(ReadingStudyCore.settings(value)));return true;}catch(_){return false;}}
+  function saveSettings(value) {
+    const metadataKey='zyz-reading-sync-settings-v1';
+    let previous,previousMetadata;
+    try {
+      previous=localStorage.getItem(settingsKey);previousMetadata=localStorage.getItem(metadataKey);
+      const next=ReadingStudyCore.settings(value),old=getSettings();
+      localStorage.setItem(settingsKey,JSON.stringify(next));
+      if(!previous||next.dailyMinutes!==old.dailyMinutes){
+        let deviceId=localStorage.getItem('zyz-reading-sync-device-v1');
+        if(!deviceId){deviceId=globalThis.crypto?.randomUUID?.()||'device-'+Date.now()+'-'+Math.random().toString(36).slice(2);localStorage.setItem('zyz-reading-sync-device-v1',deviceId);}
+        const metadata={fields:{dailyMinutes:{value:next.dailyMinutes,modifiedAt:new Date().toISOString(),deviceId}}};
+        localStorage.setItem(metadataKey,JSON.stringify(metadata));
+      }
+      dispatchEvent(new CustomEvent('reading-study-updated'));
+      return true;
+    } catch(_) {
+      try {
+        if(previous===null)localStorage.removeItem(settingsKey);else if(previous!==undefined)localStorage.setItem(settingsKey,previous);
+        if(previousMetadata===null)localStorage.removeItem(metadataKey);else if(previousMetadata!==undefined)localStorage.setItem(metadataKey,previousMetadata);
+      }catch(_){}
+      return false;
+    }
+  }
   function sourceIndex() {return window.ReadingSourceBackupIndex;}
   function validSource(value) {
     if(!window.ReadingSourceBackup||!sourceIndex())return null;

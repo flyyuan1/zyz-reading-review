@@ -77,7 +77,7 @@
   function render() {
     const stored=ReadingStudyStore.list();
     const plan=ReadingStudyCore.buildPlan(ReadingStudyStore.enrichArticles(articles),stored.attempts,ReadingStudyStore.getSettings(),new Date());currentPlan=plan;
-    if(!stored.ok)message('当前浏览器无法读取测试记录。请检查浏览器存储权限；此页面没有云端副本。');
+    if(!stored.ok)message('当前浏览器无法读取本机记录。请检查存储权限；若已启用同步，恢复权限后可重新拉取云端记录。');
     const valid=plan.states.filter(s=>s.current),assisted=valid.filter(s=>s.latest.assisted).length;
     $('metric-passed').textContent=plan.passed+' / '+articles.length;
     $('metric-accuracy').textContent=plan.latestAccuracy===null?'—':(plan.latestAccuracy*100).toFixed(1)+'%';
