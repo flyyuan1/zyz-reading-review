@@ -8,6 +8,35 @@
   const FRAMEWORK_FLASH_MS = 3000;
   let frameworkFlashTimer;
   const evidenceTargets = new Map();
+  const EVIDENCE_FLASH_MS = 1000;
+  let evidenceFlashTimer;
+  let evidenceScrollFrame;
+  function clearEvidenceFlash() {
+    clearTimeout(evidenceFlashTimer);
+    cancelAnimationFrame(evidenceScrollFrame);
+    document.querySelectorAll('.evidence-locate-flash').forEach(el => el.classList.remove('evidence-locate-flash'));
+  }
+  function flashEvidenceAfterScroll(anchor, question) {
+    const marks = [...document.querySelectorAll('.evidence-highlight')]
+      .filter(mark => mark.dataset.evidenceQuestions.split(' ').includes(question));
+    const targets = marks.length ? marks : [anchor.querySelector('.paragraph-en')].filter(Boolean);
+    let previousTop = anchor.getBoundingClientRect().top;
+    const started = performance.now();
+    let stableSince = started;
+    function checkPosition(now) {
+      const top = anchor.getBoundingClientRect().top;
+      if (Math.abs(top - previousTop) > 0.1) stableSince = now;
+      previousTop = top;
+      // Wait for actual scroll stability, including an already-visible target.
+      if (now - started >= 160 && now - stableSince >= 120) {
+        targets.forEach(el => el.classList.add('evidence-locate-flash'));
+        evidenceFlashTimer = setTimeout(clearEvidenceFlash, EVIDENCE_FLASH_MS);
+        return;
+      }
+      evidenceScrollFrame = requestAnimationFrame(checkPosition);
+    }
+    evidenceScrollFrame = requestAnimationFrame(checkPosition);
+  }
   function clearFrameworkFlash() {
     clearTimeout(frameworkFlashTimer);
     document.querySelectorAll('.passage-unit.framework-focused').forEach(el => el.classList.remove('framework-focused'));
@@ -152,6 +181,7 @@
     if (!block) return;
     const target = document.getElementById(block);
     if (!target) return;
+    clearEvidenceFlash();
     clearFrameworkFlash();
     document.querySelectorAll('.passage-unit.located').forEach(el => el.classList.remove('located'));
     document.querySelectorAll('.evidence-context-note').forEach(el => el.remove());
@@ -165,9 +195,19 @@
       target.prepend(note);
     }
     if (matchMedia('(max-width:700px)').matches) setPane('passage');
-    (firstMark || target).scrollIntoView({behavior:'smooth',block:'center'});
+    const anchor = firstMark || target;
+    const pane = anchor.closest('.passage-pane');
+    const rect = anchor.getBoundingClientRect();
+    // Keep the sentence higher in the reading area, with room above its first line.
+    const topGap = Math.max(24, (pane.clientHeight - rect.height) / 3);
+    pane.scrollTo({
+      top:pane.scrollTop + rect.top - pane.getBoundingClientRect().top - pane.clientTop - topGap,
+      behavior:matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth'
+    });
+    flashEvidenceAfterScroll(anchor, question);
   }
   function setPane(pane) {
+    if (pane !== 'passage') clearEvidenceFlash();
     document.body.dataset.mobilePane = pane;
     document.querySelectorAll('[data-pane]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.pane === pane)));
   }
@@ -187,6 +227,7 @@
     const target = document.getElementById(link.dataset.frameworkTarget);
     if (!target) return;
     event.preventDefault();
+    clearEvidenceFlash();
     setPane('passage');
     // Keep focus on the source unit; briefly mark only its English paragraph.
     target.setAttribute('tabindex', '-1');
