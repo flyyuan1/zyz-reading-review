@@ -11,6 +11,10 @@
 .original-question-group:has(.original-option-bank [data-original-option*="information."])>.original-option-bank{display:flex;flex-wrap:wrap;gap:4px 22px}
 .original-question-row .answer-comparison{margin-top:14px}
 .judgment-review .answer-comparison .answer-zh{display:none}
+.compact-answer .answer-box{border:1px solid #d9e6dc;border-radius:5px;background:#eef6f0;padding:8px 10px}
+.compact-answer .answer-box.mine{border-color:#e2dce5;background:#f6f4f7}
+.question-card.compact-answer[data-status=incorrect] .answer-box.mine{border-color:#eed7d1;background:#fbefec}
+.question-card.compact-answer[data-status=correct] .answer-box.mine{border-color:#d9e6dc;background:#eef6f0}
 .question-explanation{display:flex;align-items:flex-start;gap:9px;margin:13px 0 0;padding:9px 12px;border:1px solid #e1e7d9;border-left:3px solid #b4c5a0;border-radius:6px;background:#f8faf3}
 .explanation-label{flex:none;margin-top:1px;padding:2px 6px;border-radius:4px;background:#e9f0dd;color:#5a7046;font-size:11px;font-weight:700;letter-spacing:.05em}
 .explanation-body{min-width:0}
