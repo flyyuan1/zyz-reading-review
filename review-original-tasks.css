@@ -12,7 +12,6 @@
 .original-question-row .answer-comparison{margin-top:14px}
 .judgment-review .answer-comparison .answer-zh{display:none}
 .compact-answer .answer-box{border:1px solid #d9e6dc;border-radius:5px;background:#eef6f0;padding:8px 10px}
-.compact-answer .answer-zh{color:#8b9687}
 .compact-answer .answer-box.mine{border-color:#e2dce5;background:#f6f4f7}
 .question-card.compact-answer[data-status=incorrect] .answer-box.mine{border-color:#eed7d1;background:#fbefec}
 .question-card.compact-answer[data-status=correct] .answer-box.mine{border-color:#d9e6dc;background:#eef6f0}
