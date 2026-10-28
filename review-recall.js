@@ -60,6 +60,8 @@
       const notes=member.querySelector('.question-bottom > span');
       if(notes)unit.masks.push(notes);
       unit.masks.push(...member.querySelectorAll('.answer-note'));
+      // The explanation quotes the answer, so hide it until this unit is revealed.
+      unit.masks.push(...member.querySelectorAll('.question-explanation'));
       const paragraphHeading = headingById.get(member.id);
       if (paragraphHeading) {
         unit.headings.push(paragraphHeading);
