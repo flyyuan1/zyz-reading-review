@@ -11,4 +11,9 @@
 .original-question-group:has(.original-option-bank [data-original-option*="information."])>.original-option-bank{display:flex;flex-wrap:wrap;gap:4px 22px}
 .original-question-row .answer-comparison{margin-top:14px}
 .judgment-review .answer-comparison .answer-zh{display:none}
+.article-question-types{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:8px;overflow-x:auto;max-width:100%;padding:9px 0 12px;background:#fff;border-bottom:1px solid #e1e5dc;margin-bottom:14px}
+.article-question-types>span{font-size:12px;color:#71786c;white-space:nowrap}
+.article-question-types button{flex:none;display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #d5ddcf;border-radius:7px;background:#f5f7f1;color:#4b6141;font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.article-question-types button:hover,.article-question-types button:focus-visible{background:#e9efdf;border-color:#819570}
+.article-question-types small{font-size:11px;color:#737c6c}
 @media(max-width:700px){.original-question-group{padding:14px;margin:14px 0 22px}.original-option-bank{padding:10px 12px}.original-option-zh{font-size:13px}.original-question-group .original-question-row{padding:16px 0}}
