@@ -20,6 +20,11 @@
 .explanation-body{min-width:0}
 .question-explanation p{margin:0;font-size:13px;line-height:1.8;color:#48543f}
 .question-explanation p+p{margin-top:6px}
+.explanation-evidence{margin:9px 0 0;padding:8px 10px;background:#f1f5ea;border:1px solid #dbe3cf;border-radius:6px}
+.explanation-evidence+.explanation-evidence{margin-top:8px}
+.evidence-source{display:block;font-size:11px;font-weight:700;color:#6f825d;margin-bottom:4px}
+.explanation-evidence .evidence-en{font-size:13px;line-height:1.7;color:#394538;white-space:pre-wrap;overflow-wrap:anywhere}
+.explanation-evidence .evidence-zh{font-size:12.5px;line-height:1.7;color:#66755e;margin-top:4px;white-space:pre-wrap}
 body[data-recall-mode=on] .recall-unit[data-recall-revealed=false] .question-explanation,body[data-recall-mode=on] .recall-heading[data-recall-revealed=false] .question-explanation{visibility:hidden;user-select:none}
 .article-question-types{position:static;display:flex;align-items:center;gap:8px;overflow-x:auto;max-width:100%;padding:9px 0 12px;background:#fff;border-bottom:1px solid #e1e5dc;margin-bottom:14px}
 .article-question-types>span{font-size:12px;color:#71786c;white-space:nowrap}
