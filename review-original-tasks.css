@@ -10,4 +10,5 @@
 .original-option-zh{font-size:13px;color:#65705e;margin-top:2px}
 .original-question-group:has(.original-option-bank [data-original-option*="information."])>.original-option-bank{display:flex;flex-wrap:wrap;gap:4px 22px}
 .original-question-row .answer-comparison{margin-top:14px}
+.judgment-review .answer-comparison .answer-zh{display:none}
 @media(max-width:700px){.original-question-group{padding:14px;margin:14px 0 22px}.original-option-bank{padding:10px 12px}.original-option-zh{font-size:13px}.original-question-group .original-question-row{padding:16px 0}}
