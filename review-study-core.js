@@ -5,7 +5,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, () => {
   'use strict';
   const DAY = 86400000;
-  const defaults = {startDate:'2026-10-25',examAt:'2026-10-28T09:00:00+08:00',dailyMinutes:90,reserveMinutes:10,firstTestMinutes:4};
+  const defaults = {startDate:'2026-10-25',examAt:'2026-10-30T09:00:00+08:00',dailyMinutes:90,reserveMinutes:10,firstTestMinutes:4};
   function dateKey(value) {
     const parts = new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(value));
     return ['year','month','day'].map(type=>parts.find(p=>p.type===type).value).join('-');
